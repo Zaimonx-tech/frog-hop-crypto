@@ -11,17 +11,24 @@ export default async function handler(req, res) {
   try {
     const limit = Math.min(parseInt(req.query.limit || '100'), 500);
 
-    const connection = await getConnection();
-    const [leaders] = await connection.execute(
-      `SELECT id, name, score, level, combo, avatar, updatedAt
-       FROM leaderboard
-       ORDER BY score DESC, level DESC, combo DESC
-       LIMIT ?`,
-      [limit]
-    );
-    await connection.end();
+    const client = await getConnection();
 
-    return res.status(200).json({ success: true, leaderboard: leaders });
+    try {
+      const result = await client.query(
+        `SELECT id, name, score, level, combo, avatar, "updatedAt"
+         FROM leaderboard
+         ORDER BY score DESC, level DESC, combo DESC
+         LIMIT $1`,
+        [limit]
+      );
+
+      await client.end();
+
+      return res.status(200).json({ success: true, leaderboard: result.rows });
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   } catch (error) {
     console.error('Get leaderboard error:', error);
     return res.status(500).json({ error: 'Server error' });
