@@ -25,63 +25,68 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'This frog cannot be purchased' });
     }
 
-    const connection = await getConnection();
+    const client = await getConnection();
 
-    // Get player
-    const [players] = await connection.execute(
-      'SELECT * FROM players WHERE id = ? LIMIT 1',
-      [playerId]
-    );
+    try {
+      // Get player
+      const playerResult = await client.query(
+        'SELECT * FROM players WHERE id = $1 LIMIT 1',
+        [playerId]
+      );
 
-    if (players.length === 0) {
-      await connection.end();
-      return res.status(404).json({ error: 'Player not found' });
+      if (playerResult.rows.length === 0) {
+        await client.end();
+        return res.status(404).json({ error: 'Player not found' });
+      }
+
+      const player = playerResult.rows[0];
+      const balance = parseFloat(player.cryptoBalance);
+
+      if (balance < price) {
+        await client.end();
+        return res.status(400).json({ error: 'Insufficient balance' });
+      }
+
+      // Parse owned frogs
+      const ownedFrogs = typeof player.ownedFrogs === 'string'
+        ? JSON.parse(player.ownedFrogs)
+        : player.ownedFrogs;
+
+      if (ownedFrogs.includes(frogId)) {
+        await client.end();
+        return res.status(400).json({ error: 'You already own this frog' });
+      }
+
+      // Add frog and deduct balance
+      ownedFrogs.push(frogId);
+      const newBalance = balance - price;
+
+      await client.query(
+        `UPDATE players SET
+          "cryptoBalance" = $1, "ownedFrogs" = $2, "equippedFrog" = $3
+         WHERE id = $4`,
+        [newBalance, JSON.stringify(ownedFrogs), frogId, playerId]
+      );
+
+      // Record transaction
+      await client.query(
+        `INSERT INTO transactions ("playerId", type, amount, description, "balanceAfter")
+         VALUES ($1, $2, $3, $4, $5)`,
+        [playerId, 'purchase', price, `Bought Frog #${frogId}`, newBalance]
+      );
+
+      await client.end();
+
+      return res.status(200).json({
+        success: true,
+        message: 'Frog purchased',
+        newBalance,
+        ownedFrogs
+      });
+    } catch (error) {
+      await client.end();
+      throw error;
     }
-
-    const player = players[0];
-    const balance = parseFloat(player.cryptoBalance);
-
-    if (balance < price) {
-      await connection.end();
-      return res.status(400).json({ error: 'Insufficient balance' });
-    }
-
-    // Parse owned frogs
-    const ownedFrogs = typeof player.ownedFrogs === 'string'
-      ? JSON.parse(player.ownedFrogs)
-      : player.ownedFrogs;
-
-    if (ownedFrogs.includes(frogId)) {
-      await connection.end();
-      return res.status(400).json({ error: 'You already own this frog' });
-    }
-
-    // Add frog and deduct balance
-    ownedFrogs.push(frogId);
-    const newBalance = balance - price;
-
-    await connection.execute(
-      `UPDATE players SET
-        cryptoBalance = ?, ownedFrogs = ?, equippedFrog = ?
-       WHERE id = ?`,
-      [newBalance, JSON.stringify(ownedFrogs), frogId, playerId]
-    );
-
-    // Record transaction
-    await connection.execute(
-      `INSERT INTO transactions (playerId, type, amount, description, balanceAfter)
-       VALUES (?, ?, ?, ?, ?)`,
-      [playerId, 'purchase', price, `Bought Frog #${frogId}`, newBalance]
-    );
-
-    await connection.end();
-
-    return res.status(200).json({
-      success: true,
-      message: 'Frog purchased',
-      newBalance,
-      ownedFrogs
-    });
   } catch (error) {
     console.error('Buy frog error:', error);
     return res.status(500).json({ error: 'Server error' });
