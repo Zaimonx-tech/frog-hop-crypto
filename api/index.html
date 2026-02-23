@@ -1,0 +1,3500 @@
+
+
+
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🐸 FROG HOP CRYPTO</title>
+<script src="https://telegram.org/js/telegram-web-app.js"></script>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@700;900&family=Exo+2:wght@600;700;800&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#030712;--accent:#f7931a;--accent2:#627eea;--safe:#00e676;
+  --danger:#ff1744;--coin:#f7931a;--purple:#a855f7;--cyan:#06b6d4;
+}
+body{background:var(--bg);font-family:'Exo 2',sans-serif;overflow:hidden;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;position:relative;}
+
+/* SCREENS */
+.screen{position:absolute;width:100%;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;transition:opacity .25s;}
+.screen.hidden{opacity:0;pointer-events:none;}
+
+/* START */
+#startScreen{background:radial-gradient(ellipse at 50% 30%,#0a0f1e 0%,#030712 70%);}
+.grid-bg{position:absolute;inset:0;overflow:hidden;opacity:.06;}
+.grid-bg svg{width:100%;height:100%;}
+.chain-deco{position:absolute;font-size:2rem;opacity:.12;animation:chainFloat 8s ease-in-out infinite;}
+@keyframes chainFloat{0%,100%{transform:translateY(0) rotate(0deg);}50%{transform:translateY(-15px) rotate(10deg);}}
+
+.logo-wrap{position:relative;z-index:2;text-align:center;}
+.logo-tag{font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:6px;color:var(--accent);
+  background:rgba(247,147,26,.1);border:1px solid rgba(247,147,26,.3);padding:4px 14px;border-radius:20px;
+  display:inline-block;margin-bottom:10px;}
+.game-logo{font-family:'Orbitron',monospace;font-size:clamp(2rem,10vw,4.2rem);font-weight:900;
+  background:linear-gradient(135deg,#f7931a,#627eea,#00e676);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  filter:drop-shadow(0 0 20px rgba(247,147,26,.4));animation:logoPulse 3s ease-in-out infinite;}
+@keyframes logoPulse{0%,100%{filter:drop-shadow(0 0 15px rgba(247,147,26,.4));}50%{filter:drop-shadow(0 0 40px rgba(247,147,26,.8));}}
+.frog-hero{font-size:5rem;animation:heroHop 1.4s ease-in-out infinite;filter:drop-shadow(0 0 20px rgba(0,230,118,.5));}
+@keyframes heroHop{0%,100%{transform:translateY(0) scale(1);}50%{transform:translateY(-20px) scale(1.1);}}
+.tagline{font-size:.82rem;letter-spacing:3px;color:rgba(255,255,255,.45);text-transform:uppercase;margin:8px 0 24px;}
+
+.stats-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:22px;position:relative;z-index:2;}
+.stat-box{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:14px;
+  padding:10px 16px;text-align:center;backdrop-filter:blur(10px);}
+.stat-val{font-family:'Orbitron',monospace;font-size:1.4rem;color:var(--accent);}
+.stat-lbl{font-size:.65rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;}
+
+.btn{position:relative;z-index:2;padding:14px 42px;font-family:'Orbitron',monospace;font-size:1.1rem;
+  font-weight:700;border:none;border-radius:50px;cursor:pointer;transition:all .18s;letter-spacing:2px;}
+.btn-primary{background:linear-gradient(135deg,#f7931a,#e67e00);color:#000;
+  box-shadow:0 6px 30px rgba(247,147,26,.45);animation:btnGlow 2s ease-in-out infinite;}
+@keyframes btnGlow{0%,100%{box-shadow:0 6px 28px rgba(247,147,26,.4);}50%{box-shadow:0 6px 40px rgba(247,147,26,.8),0 0 0 6px rgba(247,147,26,.08);}}
+.btn-primary:active{transform:scale(.93);}
+.btn-secondary{background:rgba(255,255,255,.06);color:#fff;border:1px solid rgba(255,255,255,.18);
+  margin-top:10px;font-size:.9rem;padding:11px 30px;}
+.btn-secondary:active{background:rgba(255,255,255,.14);}
+
+/* GAME */
+#gameScreen{flex-direction:column;padding:0;background:var(--bg);}
+#hud{width:100%;display:flex;align-items:center;justify-content:space-between;
+  padding:8px 14px;background:rgba(0,0,0,.8);backdrop-filter:blur(14px);
+  z-index:10;border-bottom:1px solid rgba(247,147,26,.2);flex-shrink:0;gap:6px;flex-wrap:wrap;}
+.hud-item{display:flex;align-items:center;gap:5px;font-family:'Orbitron',monospace;font-size:.95rem;color:#fff;}
+#scoreDisplay{color:var(--accent);}
+#levelDisplay{color:var(--cyan);}
+#livesDisplay{color:var(--danger);}
+#comboDisplay{color:var(--purple);}
+#timerDisplay{font-size:1.1rem;font-weight:900;color:var(--accent2);min-width:2.5ch;text-align:right;}
+#timerDisplay.warn{color:var(--accent);}
+#timerDisplay.urgent{color:var(--danger);animation:tPulse .35s ease-in-out infinite;}
+@keyframes tPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.25);}}
+
+/* timer arc canvas */
+#timerArc{width:38px;height:38px;flex-shrink:0;}
+
+#canvas-container{flex:1;width:100%;overflow:hidden;position:relative;}
+#gameCanvas{display:block;}
+
+#levelProg{width:100%;height:4px;background:rgba(255,255,255,.07);position:absolute;top:0;left:0;z-index:11;}
+#levelProgBar{height:100%;background:linear-gradient(90deg,#f7931a,#627eea);transition:width .5s;box-shadow:0 0 8px rgba(247,147,26,.6);}
+
+/* hint overlay */
+#hintBar{width:100%;padding:4px 12px;background:rgba(98,126,234,.15);border-bottom:1px solid rgba(98,126,234,.25);
+  font-size:.72rem;color:rgba(255,255,255,.6);text-align:center;letter-spacing:.5px;flex-shrink:0;font-weight:600;}
+
+/* CONTROLS */
+#controls{width:100%;background:rgba(0,0,0,.75);padding:10px 16px 14px;
+  display:flex;justify-content:center;gap:10px;flex-shrink:0;border-top:1px solid rgba(255,255,255,.07);}
+.ctrl-btn{width:60px;height:60px;background:rgba(255,255,255,.07);border:1.5px solid rgba(255,255,255,.16);
+  border-radius:50%;font-size:1.4rem;color:#fff;cursor:pointer;transition:all .12s;
+  display:flex;align-items:center;justify-content:center;user-select:none;}
+.ctrl-btn:active{transform:scale(.84);background:rgba(247,147,26,.25);border-color:var(--accent);}
+#btnUp{background:rgba(0,230,118,.1);border-color:rgba(0,230,118,.35);}
+#btnUp:active{background:rgba(0,230,118,.35);}
+
+/* OVERLAYS */
+.overlay-screen{position:fixed;inset:0;background:rgba(0,0,0,.9);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;z-index:100;backdrop-filter:blur(12px);}
+.overlay-screen.hidden{display:none;}
+.ov-title{font-family:'Orbitron',monospace;font-size:clamp(1.8rem,7vw,3.2rem);margin-bottom:14px;letter-spacing:3px;font-weight:900;}
+.ov-emoji{font-size:4.5rem;margin-bottom:10px;animation:bounceIn .5s ease;}
+@keyframes bounceIn{0%{transform:scale(0);}60%{transform:scale(1.22);}100%{transform:scale(1);}}
+.score-card{background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);
+  border-radius:18px;padding:18px 26px;margin-bottom:20px;min-width:260px;}
+.sc-row{display:flex;justify-content:space-between;gap:28px;color:rgba(255,255,255,.75);
+  font-size:.9rem;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);font-weight:700;}
+.sc-row.total{color:var(--accent);font-family:'Orbitron',monospace;font-size:1.2rem;border:none;margin-top:4px;}
+
+/* LEADERBOARD */
+#leaderboardScreen{background:radial-gradient(ellipse at 50% 20%,#0a0f1e,var(--bg));padding:20px;}
+.lb-title{font-family:'Orbitron',monospace;font-size:2rem;color:var(--accent);margin-bottom:18px;letter-spacing:2px;}
+.lb-list{width:100%;max-width:400px;max-height:55vh;overflow-y:auto;}
+.lb-item{display:flex;align-items:center;gap:10px;padding:11px 14px;
+  background:rgba(255,255,255,.04);border-radius:12px;margin-bottom:7px;border:1px solid rgba(255,255,255,.07);}
+.lb-item.me{background:rgba(247,147,26,.1);border-color:rgba(247,147,26,.35);}
+.lb-rank{font-family:'Orbitron',monospace;font-size:1.1rem;width:28px;color:rgba(255,255,255,.4);}
+.lb-rank.gold{color:#ffd700;}.lb-rank.silver{color:#c0c0c0;}.lb-rank.bronze{color:#cd7f32;}
+.lb-name{flex:1;font-weight:800;color:#fff;font-size:.88rem;}
+.lb-score{font-family:'Orbitron',monospace;color:var(--accent);font-size:.95rem;}
+.lb-lvl{font-size:.72rem;color:rgba(255,255,255,.4);}
+
+/* particles / toast */
+.particle{position:fixed;pointer-events:none;z-index:200;font-size:1.3rem;animation:pFly 1s ease-out forwards;}
+@keyframes pFly{0%{opacity:1;transform:translate(0,0) scale(1);}100%{opacity:0;transform:translate(var(--tx),var(--ty)) scale(.2);}}
+#toast{position:fixed;top:70px;left:50%;transform:translateX(-50%);
+  background:rgba(0,0,0,.92);color:#fff;padding:8px 20px;border-radius:26px;font-weight:700;
+  z-index:300;opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;
+  border:1px solid rgba(247,147,26,.3);font-size:.88rem;font-family:'Orbitron',monospace;}
+#toast.show{opacity:1;}
+#dangerVig{position:fixed;inset:0;pointer-events:none;z-index:49;
+  background:radial-gradient(ellipse at center,transparent 45%,rgba(255,23,68,.55) 100%);
+  opacity:0;transition:opacity .3s;}
+#dangerVig.on{opacity:1;}
+#comboFlash{position:fixed;inset:0;pointer-events:none;z-index:48;background:rgba(98,126,234,.15);opacity:0;transition:opacity .1s;}
+#comboFlash.on{opacity:1;}
+
+/* level banner */
+#lvlBanner{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);
+  font-family:'Orbitron',monospace;font-size:clamp(1.5rem,6vw,2.8rem);font-weight:900;
+  letter-spacing:4px;color:#fff;z-index:150;pointer-events:none;text-align:center;
+  opacity:0;transition:opacity .3s;text-shadow:0 0 30px rgba(247,147,26,.8);}
+#lvlBanner.show{opacity:1;}
+
+@keyframes shake{0%{transform:translate(0,0);}20%{transform:translate(-5px,4px);}40%{transform:translate(5px,-4px);}60%{transform:translate(-3px,5px);}80%{transform:translate(3px,-2px);}100%{transform:translate(0,0);}}
+.shake{animation:shake .28s ease;}
+
+/* scrollbar */
+.lb-list::-webkit-scrollbar{width:3px;}
+.lb-list::-webkit-scrollbar-thumb{background:rgba(247,147,26,.3);border-radius:2px;}
+
+/* ══════════════════════════════
+   AUTH SCREENS
+══════════════════════════════ */
+#authScreen{
+  background:radial-gradient(ellipse at 40% 30%,#0d1433 0%,#030712 70%);
+  overflow-y:auto;padding:12px 16px;
+}
+.auth-logo{
+  font-family:'Orbitron',monospace;font-weight:900;font-size:clamp(1.6rem,8vw,2.8rem);
+  background:linear-gradient(135deg,#f7931a,#627eea);-webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  margin-bottom:4px;text-align:center;
+}
+.auth-frog{font-size:3rem;animation:heroHop 1.4s ease-in-out infinite;margin-bottom:4px;}
+.auth-sub{font-size:.72rem;letter-spacing:3px;color:rgba(255,255,255,.4);text-transform:uppercase;margin-bottom:16px;}
+
+.auth-card{
+  width:100%;max-width:380px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.1);
+  border-radius:20px;padding:20px 20px;
+  backdrop-filter:blur(20px);
+  position:relative;z-index:2;
+}
+.auth-tabs{display:flex;gap:0;margin-bottom:24px;background:rgba(255,255,255,.06);border-radius:12px;padding:4px;}
+.auth-tab{
+  flex:1;padding:10px;font-family:'Orbitron',monospace;font-size:.8rem;font-weight:700;
+  border:none;background:transparent;color:rgba(255,255,255,.45);border-radius:10px;cursor:pointer;
+  transition:all .2s;letter-spacing:1px;
+}
+.auth-tab.active{background:rgba(247,147,26,.2);color:#f7931a;border:1px solid rgba(247,147,26,.35);}
+
+.auth-section{display:none;}
+.auth-section.active{display:block;}
+
+.input-group{margin-bottom:12px;}
+.input-label{
+  font-size:.72rem;letter-spacing:2px;color:rgba(255,255,255,.5);
+  text-transform:uppercase;font-family:'Orbitron',monospace;
+  display:block;margin-bottom:6px;font-weight:700;
+}
+.input-wrap{position:relative;}
+.input-icon{
+  position:absolute;left:14px;top:50%;transform:translateY(-50%);
+  font-size:1rem;color:rgba(255,255,255,.35);
+}
+.auth-input{
+  width:100%;padding:13px 14px 13px 42px;
+  background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(255,255,255,.12);
+  border-radius:12px;color:#fff;font-family:'Exo 2',sans-serif;font-size:.95rem;font-weight:600;
+  outline:none;transition:all .2s;
+}
+.auth-input:focus{border-color:rgba(247,147,26,.6);background:rgba(247,147,26,.05);box-shadow:0 0 0 3px rgba(247,147,26,.1);}
+.auth-input::placeholder{color:rgba(255,255,255,.25);}
+.auth-input.error{border-color:rgba(255,23,68,.6);background:rgba(255,23,68,.05);}
+
+/* Method toggle: email or phone */
+.method-toggle{display:flex;gap:8px;margin-bottom:18px;}
+.method-btn{
+  flex:1;padding:9px;font-size:.78rem;font-weight:700;font-family:'Orbitron',monospace;
+  border:1.5px solid rgba(255,255,255,.12);border-radius:10px;background:transparent;
+  color:rgba(255,255,255,.45);cursor:pointer;transition:all .2s;letter-spacing:.5px;
+}
+.method-btn.active{border-color:rgba(247,147,26,.5);color:#f7931a;background:rgba(247,147,26,.1);}
+
+.auth-divider{
+  display:flex;align-items:center;gap:12px;margin:20px 0;
+  color:rgba(255,255,255,.25);font-size:.78rem;font-family:'Orbitron',monospace;
+}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:rgba(255,255,255,.1);}
+
+.auth-err{
+  background:rgba(255,23,68,.12);border:1px solid rgba(255,23,68,.3);
+  border-radius:10px;padding:10px 14px;margin-bottom:14px;
+  color:#ff6b6b;font-size:.82rem;font-weight:700;display:none;
+}
+.auth-err.show{display:block;}
+.auth-ok{
+  background:rgba(0,230,118,.12);border:1px solid rgba(0,230,118,.3);
+  border-radius:10px;padding:10px 14px;margin-bottom:14px;
+  color:#00e676;font-size:.82rem;font-weight:700;display:none;
+}
+.auth-ok.show{display:block;}
+
+.btn-auth{
+  width:100%;padding:14px;font-family:'Orbitron',monospace;font-size:1rem;font-weight:700;
+  letter-spacing:2px;border:none;border-radius:12px;cursor:pointer;transition:all .2s;
+  background:linear-gradient(135deg,#f7931a,#e67e00);color:#000;
+  box-shadow:0 4px 20px rgba(247,147,26,.4);margin-top:4px;
+}
+.btn-auth:active{transform:scale(.97);}
+.btn-auth-outline{
+  width:100%;padding:12px;font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;
+  letter-spacing:1px;border:1.5px solid rgba(255,255,255,.15);border-radius:12px;cursor:pointer;
+  transition:all .2s;background:transparent;color:rgba(255,255,255,.6);margin-top:10px;
+}
+.btn-auth-outline:active{background:rgba(255,255,255,.08);}
+.btn-loading{opacity:.7;pointer-events:none;}
+
+.pass-toggle{
+  position:absolute;right:14px;top:50%;transform:translateY(-50%);
+  background:none;border:none;color:rgba(255,255,255,.4);cursor:pointer;font-size:.9rem;
+}
+
+.avatar-row{display:flex;gap:10px;flex-wrap:wrap;justify-content:center;margin-bottom:16px;}
+.avatar-opt{
+  width:48px;height:48px;border-radius:50%;font-size:1.6rem;
+  background:rgba(255,255,255,.06);border:2px solid rgba(255,255,255,.1);
+  cursor:pointer;transition:all .2s;display:flex;align-items:center;justify-content:center;
+}
+.avatar-opt.selected{border-color:#f7931a;background:rgba(247,147,26,.15);transform:scale(1.1);}
+
+/* ══════════════════════════════
+   DASHBOARD
+══════════════════════════════ */
+#dashboardScreen{
+  background:radial-gradient(ellipse at 50% 20%,#0a0f1e 0%,#030712 80%);
+  overflow-y:auto;padding:0;align-items:stretch;justify-content:flex-start;
+}
+.dash-header{
+  width:100%;padding:16px 18px;
+  background:rgba(0,0,0,.6);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(247,147,26,.2);
+  display:flex;align-items:center;justify-content:space-between;flex-shrink:0;
+}
+.dash-user{display:flex;align-items:center;gap:12px;}
+.dash-avatar{
+  width:46px;height:46px;border-radius:50%;font-size:1.5rem;
+  background:linear-gradient(135deg,rgba(247,147,26,.3),rgba(98,126,234,.3));
+  border:2px solid rgba(247,147,26,.5);display:flex;align-items:center;justify-content:center;
+}
+.dash-name{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;color:#fff;}
+.dash-email{font-size:.72rem;color:rgba(255,255,255,.45);}
+.dash-badge{
+  font-family:'Orbitron',monospace;font-size:.62rem;letter-spacing:1px;
+  padding:3px 10px;border-radius:20px;font-weight:700;
+}
+.badge-legend{background:rgba(247,147,26,.2);color:#f7931a;border:1px solid rgba(247,147,26,.4);}
+.badge-pro{background:rgba(98,126,234,.2);color:#627eea;border:1px solid rgba(98,126,234,.4);}
+.badge-rookie{background:rgba(0,230,118,.15);color:#00e676;border:1px solid rgba(0,230,118,.35);}
+
+.dash-body{width:100%;padding:16px;overflow-y:auto;flex:1;}
+
+.dash-section-title{
+  font-family:'Orbitron',monospace;font-size:.72rem;letter-spacing:3px;color:rgba(255,255,255,.4);
+  text-transform:uppercase;margin-bottom:10px;margin-top:4px;font-weight:700;
+}
+
+.dash-stats-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:18px;}
+.dash-stat{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:14px;text-align:center;
+}
+.dash-stat-val{font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;}
+.dash-stat-lbl{font-size:.68rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;margin-top:2px;}
+
+.dash-progress{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:16px;margin-bottom:18px;
+}
+.dash-prog-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;}
+.dash-prog-label{font-family:'Orbitron',monospace;font-size:.85rem;color:#fff;font-weight:700;}
+.dash-prog-pct{font-family:'Orbitron',monospace;font-size:.85rem;color:var(--accent);}
+.prog-bar-bg{height:10px;background:rgba(255,255,255,.07);border-radius:5px;overflow:hidden;}
+.prog-bar-fill{height:100%;background:linear-gradient(90deg,#f7931a,#627eea);border-radius:5px;transition:width .6s ease;box-shadow:0 0 8px rgba(247,147,26,.5);}
+
+.dash-achievements{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:18px;}
+.achievement{
+  background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);
+  border-radius:12px;padding:12px;display:flex;align-items:center;gap:8px;
+}
+.achievement.unlocked{border-color:rgba(247,147,26,.35);background:rgba(247,147,26,.07);}
+.ach-icon{font-size:1.5rem;}
+.ach-name{font-size:.72rem;font-weight:700;color:#fff;line-height:1.2;}
+.ach-desc{font-size:.62rem;color:rgba(255,255,255,.4);}
+.ach-locked{opacity:.3;filter:grayscale(1);}
+
+.dash-crypto-wallet{
+  background:rgba(255,255,255,.04);border:1px solid rgba(247,147,26,.2);
+  border-radius:14px;padding:16px;margin-bottom:18px;
+}
+.wallet-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid rgba(255,255,255,.06);}
+.wallet-row:last-child{border:none;}
+.wallet-coin{display:flex;align-items:center;gap:8px;}
+.wallet-symbol{font-family:'Orbitron',monospace;font-size:.85rem;color:#fff;font-weight:700;}
+.wallet-amount{font-family:'Orbitron',monospace;font-size:.95rem;color:var(--accent);font-weight:900;}
+
+.dash-actions{display:flex;flex-direction:column;gap:8px;margin-bottom:20px;}
+
+/* My Frogs collection on dashboard */
+.my-frogs-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(80px,1fr));
+  gap:8px;margin-bottom:18px;
+}
+.my-frog-chip{
+  background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:12px;padding:8px 4px;text-align:center;cursor:pointer;
+  transition:all .18s;position:relative;
+}
+.my-frog-chip.active{
+  border-color:#00e676;background:rgba(0,230,118,.12);
+  box-shadow:0 0 14px rgba(0,230,118,.3);
+}
+.my-frog-chip:hover{border-color:rgba(247,147,26,.5);background:rgba(247,147,26,.07);}
+.my-frog-chip-emoji{font-size:1.8rem;display:block;line-height:1;margin-bottom:3px;}
+.my-frog-chip-name{font-size:.5rem;font-family:'Orbitron',monospace;color:rgba(255,255,255,.6);
+  font-weight:700;line-height:1.2;word-break:break-word;}
+.my-frog-chip-mult{font-size:.55rem;font-family:'Orbitron',monospace;color:#f7931a;font-weight:900;margin-top:2px;}
+.my-frog-active-badge{
+  position:absolute;top:-4px;right:-4px;
+  background:#00e676;color:#000;font-size:.4rem;
+  font-family:'Orbitron',monospace;font-weight:900;
+  padding:1px 4px;border-radius:6px;letter-spacing:.5px;
+}
+.active-frog-banner{
+  background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);
+  border-radius:12px;padding:12px 14px;margin-bottom:14px;
+  display:flex;align-items:center;gap:12px;
+}
+.active-frog-emoji{font-size:2.2rem;}
+.active-frog-info{flex:1;}
+.active-frog-name{font-family:'Orbitron',monospace;font-size:.8rem;font-weight:900;color:#fff;margin-bottom:2px;}
+.active-frog-mult{font-family:'Orbitron',monospace;font-size:.75rem;color:#f7931a;font-weight:900;}
+.active-frog-desc{font-size:.65rem;color:rgba(255,255,255,.4);margin-top:1px;}
+.dash-btn{
+  width:100%;padding:14px;font-family:'Orbitron',monospace;font-size:.95rem;font-weight:700;
+  letter-spacing:1px;border:none;border-radius:12px;cursor:pointer;transition:all .18s;
+}
+.dash-btn-play{background:linear-gradient(135deg,#f7931a,#e67e00);color:#000;box-shadow:0 4px 20px rgba(247,147,26,.4);}
+.dash-btn-play:active{transform:scale(.97);}
+.dash-btn-outline{background:transparent;color:rgba(255,255,255,.7);border:1.5px solid rgba(255,255,255,.15);}
+.dash-btn-danger{background:rgba(255,23,68,.1);color:#ff4d4d;border:1.5px solid rgba(255,23,68,.25);}
+
+.rank-badge{
+  display:inline-flex;align-items:center;gap:6px;
+  background:rgba(247,147,26,.15);border:1px solid rgba(247,147,26,.3);
+  border-radius:20px;padding:6px 14px;
+  font-family:'Orbitron',monospace;font-size:.78rem;font-weight:700;color:#f7931a;
+  margin-bottom:14px;
+}
+
+
+/* ═══════════════════════════════
+   ADMIN DASHBOARD
+═══════════════════════════════ */
+#adminLoginScreen{
+  background:radial-gradient(ellipse at 50% 30%,#1a0000 0%,#030712 70%);
+}
+.admin-login-card{
+  background:rgba(255,0,0,.05);border:1.5px solid rgba(255,50,50,.25);
+  border-radius:20px;padding:32px 28px;width:100%;max-width:360px;
+  backdrop-filter:blur(20px);
+}
+.admin-logo{
+  font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;
+  color:#ff4444;text-align:center;margin-bottom:4px;letter-spacing:3px;
+}
+.admin-sub{font-size:.68rem;color:rgba(255,100,100,.5);text-align:center;
+  letter-spacing:3px;text-transform:uppercase;margin-bottom:24px;}
+.admin-err{background:rgba(255,23,68,.12);border:1px solid rgba(255,23,68,.3);
+  border-radius:10px;padding:10px 14px;margin-bottom:14px;
+  color:#ff6b6b;font-size:.82rem;font-weight:700;display:none;}
+.admin-err.show{display:block;}
+
+#adminScreen{
+  background:radial-gradient(ellipse at 50% 10%,#150000 0%,#030712 60%);
+  overflow-y:auto;padding:0;align-items:stretch;justify-content:flex-start;
+}
+.admin-header{
+  position:sticky;top:0;z-index:20;
+  background:rgba(0,0,0,.9);backdrop-filter:blur(14px);
+  border-bottom:2px solid rgba(255,50,50,.3);
+  padding:12px 18px;display:flex;align-items:center;justify-content:space-between;
+}
+.admin-title{
+  font-family:'Orbitron',monospace;font-size:1.1rem;font-weight:900;
+  color:#ff4444;letter-spacing:2px;
+}
+.admin-body{padding:16px;flex:1;}
+.admin-section-title{
+  font-family:'Orbitron',monospace;font-size:.7rem;letter-spacing:3px;
+  color:rgba(255,80,80,.6);text-transform:uppercase;margin:16px 0 10px;font-weight:700;
+}
+.admin-stats-row{
+  display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;
+}
+.admin-stat-box{
+  background:rgba(255,50,50,.06);border:1px solid rgba(255,50,50,.18);
+  border-radius:12px;padding:12px;text-align:center;
+}
+.admin-stat-val{font-family:'Orbitron',monospace;font-size:1.3rem;color:#ff6666;font-weight:900;}
+.admin-stat-lbl{font-size:.62rem;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:1px;}
+
+.admin-search{
+  width:100%;padding:11px 14px;background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,50,50,.2);border-radius:10px;
+  color:#fff;font-family:'Exo 2',sans-serif;font-size:.9rem;
+  outline:none;margin-bottom:12px;
+}
+.admin-search:focus{border-color:rgba(255,50,50,.5);background:rgba(255,50,50,.05);}
+.admin-search::placeholder{color:rgba(255,255,255,.25);}
+
+.player-card{
+  background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);
+  border-radius:14px;padding:14px;margin-bottom:10px;
+  transition:border-color .2s;
+}
+.player-card:hover{border-color:rgba(255,50,50,.3);}
+.player-card-header{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:10px;cursor:pointer;
+}
+.player-card-name{font-family:'Orbitron',monospace;font-size:.9rem;font-weight:900;color:#fff;}
+.player-card-id{font-size:.62rem;color:rgba(255,255,255,.3);font-family:'Orbitron',monospace;}
+.player-card-meta{font-size:.72rem;color:rgba(255,255,255,.5);margin-top:2px;}
+.player-edit-panel{display:none;border-top:1px solid rgba(255,255,255,.07);padding-top:12px;margin-top:4px;}
+.player-edit-panel.open{display:block;}
+.edit-row{display:flex;align-items:center;gap:8px;margin-bottom:8px;}
+.edit-label{font-size:.7rem;color:rgba(255,255,255,.5);font-family:'Orbitron',monospace;
+  min-width:110px;font-weight:700;letter-spacing:.5px;}
+.edit-input{
+  flex:1;padding:8px 10px;background:rgba(255,255,255,.06);
+  border:1.5px solid rgba(255,255,255,.12);border-radius:8px;
+  color:#fff;font-family:'Exo 2',sans-serif;font-size:.85rem;outline:none;
+  transition:border-color .2s;
+}
+.edit-input:focus{border-color:rgba(255,50,50,.5);background:rgba(255,50,50,.04);}
+.edit-actions{display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;}
+.btn-admin-save{
+  flex:1;padding:9px;font-family:'Orbitron',monospace;font-size:.75rem;font-weight:700;
+  letter-spacing:1px;border:none;border-radius:8px;cursor:pointer;
+  background:linear-gradient(135deg,#ff4444,#cc0000);color:#fff;
+  box-shadow:0 3px 12px rgba(255,50,50,.35);transition:all .18s;
+}
+.btn-admin-save:active{transform:scale(.96);}
+.btn-admin-del{
+  padding:9px 14px;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;
+  border:1.5px solid rgba(255,50,50,.3);border-radius:8px;cursor:pointer;
+  background:rgba(255,50,50,.08);color:#ff6666;transition:all .18s;
+}
+.btn-admin-del:active{background:rgba(255,50,50,.25);}
+.btn-admin-logout{
+  background:rgba(255,50,50,.1);border:1px solid rgba(255,50,50,.3);
+  color:#ff6666;font-family:'Orbitron',monospace;font-size:.7rem;font-weight:700;
+  padding:7px 14px;border-radius:8px;cursor:pointer;letter-spacing:1px;
+}
+.admin-badge{
+  font-size:.58rem;font-family:'Orbitron',monospace;font-weight:900;
+  background:rgba(255,50,50,.2);color:#ff6666;border:1px solid rgba(255,50,50,.4);
+  border-radius:6px;padding:1px 6px;letter-spacing:.5px;
+}
+/* Admin frog collection manager */
+.admin-frogs-section{
+  margin-top:12px;border-top:1px solid rgba(255,255,255,.08);padding-top:12px;
+}
+.admin-frogs-title{
+  font-family:'Orbitron',monospace;font-size:.65rem;font-weight:700;
+  color:rgba(255,100,100,.7);letter-spacing:2px;text-transform:uppercase;
+  margin-bottom:8px;
+}
+.admin-frog-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));
+  gap:6px;max-height:220px;overflow-y:auto;padding:4px 2px;
+}
+.admin-frog-tile{
+  border:1.5px solid rgba(255,255,255,.1);border-radius:10px;
+  padding:6px 3px;text-align:center;cursor:pointer;
+  transition:all .15s;position:relative;background:rgba(255,255,255,.03);
+}
+.admin-frog-tile.owned{
+  border-color:rgba(0,230,118,.5);background:rgba(0,230,118,.1);
+}
+.admin-frog-tile.equipped-frog{
+  border-color:#f7931a;background:rgba(247,147,26,.12);
+  box-shadow:0 0 10px rgba(247,147,26,.3);
+}
+.admin-frog-tile:hover{border-color:rgba(255,100,100,.5);background:rgba(255,100,100,.08);}
+.admin-frog-tile-emoji{font-size:1.4rem;display:block;line-height:1.2;}
+.admin-frog-tile-name{font-size:.45rem;font-family:'Orbitron',monospace;
+  color:rgba(255,255,255,.5);font-weight:700;margin-top:2px;word-break:break-word;}
+.admin-frog-tile-price{font-size:.42rem;color:rgba(247,147,26,.6);font-family:'Orbitron',monospace;}
+.admin-frog-owned-dot{
+  position:absolute;top:3px;right:3px;width:7px;height:7px;
+  border-radius:50%;background:#00e676;
+}
+.admin-frog-equipped-dot{
+  position:absolute;top:3px;left:3px;
+  font-size:.4rem;font-family:'Orbitron',monospace;color:#f7931a;font-weight:900;
+}
+.admin-frog-legend{
+  display:flex;gap:10px;margin-top:6px;flex-wrap:wrap;
+  font-size:.6rem;color:rgba(255,255,255,.35);font-family:'Orbitron',monospace;
+}
+.admin-frog-legend span{display:flex;align-items:center;gap:4px;}
+.admin-equipped-selector{
+  margin-top:8px;
+}
+.admin-equipped-selector label{
+  font-family:'Orbitron',monospace;font-size:.62rem;color:rgba(255,100,100,.7);
+  text-transform:uppercase;letter-spacing:1px;display:block;margin-bottom:4px;
+}
+.admin-equipped-selector select{
+  width:100%;padding:8px 10px;background:rgba(255,255,255,.05);
+  border:1.5px solid rgba(255,100,100,.25);border-radius:8px;
+  color:#fff;font-family:'Exo 2',sans-serif;font-size:.85rem;outline:none;
+}
+.admin-equipped-selector select option{background:#1a0a0a;color:#fff;}
+
+/* loading spinner */
+.spinner{
+  width:36px;height:36px;border:3px solid rgba(247,147,26,.2);
+  border-top-color:#f7931a;border-radius:50%;
+  animation:spin .8s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* notification dot */
+.notif-dot{
+  width:8px;height:8px;background:#ff1744;border-radius:50%;
+  display:inline-block;margin-left:4px;vertical-align:middle;
+  animation:dotPulse 1.5s ease-in-out infinite;
+}
+@keyframes dotPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.4);}}
+
+/* ═══ FROG STORE ═══ */
+#storeScreen{
+  background:radial-gradient(ellipse at 50% 20%,#0a0f1e,var(--bg));
+  padding:0;flex-direction:column;align-items:stretch;justify-content:flex-start;
+  overflow-y:auto;
+}
+.store-header{
+  position:sticky;top:0;z-index:10;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(14px);
+  border-bottom:1px solid rgba(247,147,26,.25);
+  padding:14px 18px;text-align:center;
+}
+.store-title{
+  font-family:'Orbitron',monospace;font-size:1.5rem;font-weight:900;
+  color:#f7931a;letter-spacing:3px;margin-bottom:4px;
+}
+.store-balance{
+  font-family:'Orbitron',monospace;font-size:1rem;color:#00e676;
+  margin-bottom:2px;
+}
+.store-grid{
+  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  gap:12px;padding:16px;flex:1;
+}
+.frog-card{
+  background:rgba(255,255,255,.04);border:1.5px solid rgba(255,255,255,.1);
+  border-radius:16px;padding:14px 10px;text-align:center;
+  transition:all .2s;cursor:pointer;position:relative;
+}
+.frog-card:hover{border-color:rgba(247,147,26,.4);background:rgba(247,147,26,.06);}
+.frog-card.owned{border-color:rgba(0,230,118,.5);background:rgba(0,230,118,.07);}
+.frog-card.equipped{border-color:#00e676;background:rgba(0,230,118,.15);box-shadow:0 0 16px rgba(0,230,118,.3);}
+.frog-card.cant-afford{opacity:.55;cursor:not-allowed;}
+.frog-emoji{font-size:2.8rem;margin-bottom:6px;display:block;line-height:1;}
+.frog-name{font-family:'Orbitron',monospace;font-size:.62rem;font-weight:700;color:#fff;
+  margin-bottom:4px;line-height:1.2;}
+.frog-price{font-family:'Orbitron',monospace;font-size:.72rem;color:#f7931a;font-weight:900;}
+.frog-price.owned-label{color:#00e676;}
+.frog-price.equipped-label{color:#00e676;}
+.equipped-badge{
+  position:absolute;top:6px;right:6px;
+  background:#00e676;color:#000;font-size:.5rem;
+  font-family:'Orbitron',monospace;font-weight:900;
+  padding:2px 6px;border-radius:8px;letter-spacing:.5px;
+}
+.frog-mult{
+  font-family:'Orbitron',monospace;font-size:.68rem;font-weight:900;
+  color:#f7931a;background:rgba(247,147,26,.15);
+  border:1px solid rgba(247,147,26,.4);border-radius:8px;
+  padding:2px 8px;margin:3px auto 2px;display:inline-block;
+  animation:multPulse 2s ease-in-out infinite;
+}
+@keyframes multPulse{0%,100%{box-shadow:0 0 4px rgba(247,147,26,.3);}50%{box-shadow:0 0 12px rgba(247,147,26,.7);}}
+
+/* Buy confirm modal */
+#buyConfirmModal{
+  position:fixed;inset:0;z-index:9999;
+  background:rgba(0,0,0,.85);backdrop-filter:blur(14px);
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity .2s;
+}
+#buyConfirmModal.open{opacity:1;pointer-events:all;}
+.buy-modal-box{
+  background:#0d1a0d;border:2px solid rgba(247,147,26,.4);
+  border-radius:20px;padding:28px 24px;max-width:320px;width:90%;
+  text-align:center;box-shadow:0 0 40px rgba(247,147,26,.2);
+}
+.buy-modal-emoji{font-size:3rem;margin-bottom:8px;display:block;}
+.buy-modal-title{font-family:'Orbitron',monospace;font-size:1rem;font-weight:900;
+  color:#fff;margin-bottom:6px;}
+.buy-modal-price{font-family:'Orbitron',monospace;font-size:1.4rem;font-weight:900;
+  color:#f7931a;margin-bottom:4px;}
+.buy-modal-balance{font-size:.75rem;color:rgba(255,255,255,.45);
+  font-family:'Orbitron',monospace;margin-bottom:20px;}
+.buy-modal-mult{font-family:'Orbitron',monospace;font-size:.75rem;color:#00e676;
+  background:rgba(0,230,118,.1);border:1px solid rgba(0,230,118,.3);
+  border-radius:8px;padding:4px 12px;display:inline-block;margin-bottom:18px;}
+.buy-modal-btns{display:flex;gap:10px;}
+.buy-modal-confirm{
+  flex:1;padding:13px;font-family:'Orbitron',monospace;font-size:.9rem;font-weight:900;
+  border:none;border-radius:12px;cursor:pointer;
+  background:linear-gradient(135deg,#f7931a,#e67e00);color:#000;
+  box-shadow:0 4px 20px rgba(247,147,26,.45);letter-spacing:1px;
+}
+.buy-modal-confirm:active{transform:scale(.95);}
+.buy-modal-cancel{
+  padding:13px 18px;font-family:'Orbitron',monospace;font-size:.85rem;font-weight:700;
+  border:1.5px solid rgba(255,255,255,.15);border-radius:12px;cursor:pointer;
+  background:transparent;color:rgba(255,255,255,.5);
+}
+.buy-modal-cancel:active{background:rgba(255,255,255,.08);}
+</style>
+</head>
+<body>
+<div id="toast"></div>
+<div id="dangerVig"></div>
+<div id="comboFlash"></div>
+<div id="lvlBanner"></div>
+
+<!-- ══════════════════════════════════════
+    AUTH SCREEN
+══════════════════════════════════════ -->
+<div id="authScreen" class="screen">
+  <div class="auth-frog">🐸</div>
+  <div class="auth-logo">FROG HOP</div>
+  <div class="auth-sub">⛓ CRYPTO BLOCKCHAIN EDITION ⛓</div>
+
+  <div class="auth-card">
+    <!-- Tab switcher -->
+    <div class="auth-tabs">
+      <button class="auth-tab active" id="tabLogin" onclick="switchAuthTab('login')">LOG IN</button>
+      <button class="auth-tab" id="tabSignup" onclick="switchAuthTab('signup')">SIGN UP</button>
+    </div>
+
+    <!-- ── LOGIN ── -->
+    <div class="auth-section active" id="sectionLogin">
+      <div class="auth-err" id="loginErr"></div>
+      <div class="auth-ok"  id="loginOk"></div>
+
+      <div class="method-toggle">
+        <button class="method-btn active" id="loginMethodEmail" onclick="setLoginMethod('email')">📧 Email</button>
+        <button class="method-btn"        id="loginMethodPhone" onclick="setLoginMethod('phone')">📱 Phone</button>
+      </div>
+
+      <div class="input-group" id="loginEmailGroup">
+        <label class="input-label">Email Address</label>
+        <div class="input-wrap">
+          <span class="input-icon">📧</span>
+          <input class="auth-input" id="loginEmail" type="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+      </div>
+      <div class="input-group" id="loginPhoneGroup" style="display:none">
+        <label class="input-label">Mobile Number</label>
+        <div class="input-wrap">
+          <span class="input-icon">📱</span>
+          <input class="auth-input" id="loginPhone" type="tel" placeholder="+1 555 000 0000" autocomplete="tel">
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="auth-input" id="loginPass" type="password" placeholder="Enter password" autocomplete="current-password">
+          <button class="pass-toggle" onclick="togglePass('loginPass',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <button class="btn-auth" id="loginBtn" onclick="doLogin()">▶ LOGIN</button>
+      <button class="btn-auth-outline" onclick="switchAuthTab('signup')">No account? Sign Up →</button>
+    </div>
+
+    <!-- ── SIGNUP ── -->
+    <div class="auth-section" id="sectionSignup">
+      <div class="auth-err" id="signupErr"></div>
+      <div class="auth-ok"  id="signupOk"></div>
+
+      <div class="input-group">
+        <label class="input-label">Display Name</label>
+        <div class="input-wrap">
+          <span class="input-icon">🐸</span>
+          <input class="auth-input" id="signupName" type="text" placeholder="CryptoFrog99" maxlength="20" autocomplete="nickname">
+        </div>
+      </div>
+
+      <div class="method-toggle">
+        <button class="method-btn active" id="signupMethodEmail" onclick="setSignupMethod('email')">📧 Email</button>
+        <button class="method-btn"        id="signupMethodPhone" onclick="setSignupMethod('phone')">📱 Phone</button>
+      </div>
+
+      <div class="input-group" id="signupEmailGroup">
+        <label class="input-label">Email Address</label>
+        <div class="input-wrap">
+          <span class="input-icon">📧</span>
+          <input class="auth-input" id="signupEmail" type="email" placeholder="your@email.com" autocomplete="email">
+        </div>
+      </div>
+      <div class="input-group" id="signupPhoneGroup" style="display:none">
+        <label class="input-label">Mobile Number</label>
+        <div class="input-wrap">
+          <span class="input-icon">📱</span>
+          <input class="auth-input" id="signupPhone" type="tel" placeholder="+1 555 000 0000" autocomplete="tel">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="auth-input" id="signupPass" type="password" placeholder="Min 6 characters" autocomplete="new-password">
+          <button class="pass-toggle" onclick="togglePass('signupPass',this)" tabindex="-1">👁</button>
+        </div>
+      </div>
+      <div class="input-group">
+        <label class="input-label">Confirm Password</label>
+        <div class="input-wrap">
+          <span class="input-icon">🔒</span>
+          <input class="auth-input" id="signupPass2" type="password" placeholder="Repeat password" autocomplete="new-password">
+        </div>
+      </div>
+
+      <div class="input-group">
+        <label class="input-label">Choose Avatar</label>
+        <div class="avatar-row" id="avatarRow">
+          <div class="avatar-opt selected" onclick="selectAvatar(this,'🐸')">🐸</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🦊')">🦊</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🦁')">🦁</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🐉')">🐉</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🦅')">🦅</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🤖')">🤖</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'👾')">👾</div>
+          <div class="avatar-opt" onclick="selectAvatar(this,'🧙')">🧙</div>
+        </div>
+      </div>
+
+      <button class="btn-auth" id="signupBtn" onclick="doSignup()">🚀 CREATE ACCOUNT</button>
+      <button class="btn-auth-outline" onclick="switchAuthTab('login')">Already have an account? →</button>
+    </div>
+  </div>
+
+  <p style="color:rgba(255,255,255,.2);font-size:.65rem;margin-top:14px;text-align:center;position:relative;z-index:2;">
+    Your data is stored locally on this device.<br>All accounts are private and secure.
+  </p>
+
+  <button onclick="openAdminLogin()" style="
+    margin-top:16px;position:relative;z-index:2;
+    background:rgba(255,40,40,.12);
+    border:1.5px solid rgba(255,50,50,.35);
+    color:#ff6666;
+    font-family:'Orbitron',monospace;font-size:.72rem;font-weight:700;
+    letter-spacing:2px;padding:10px 28px;border-radius:50px;
+    cursor:pointer;transition:all .2s;
+    box-shadow:0 0 16px rgba(255,40,40,.15);
+  "
+  onmouseover="this.style.background='rgba(255,40,40,.22)';this.style.boxShadow='0 0 24px rgba(255,40,40,.35)'"
+  onmouseout="this.style.background='rgba(255,40,40,.12)';this.style.boxShadow='0 0 16px rgba(255,40,40,.15)'"
+  >🔐 ADMIN PANEL</button>
+</div>
+
+<!-- ══════════════════════════════════════
+    DASHBOARD SCREEN
+══════════════════════════════════════ -->
+<div id="dashboardScreen" class="screen hidden">
+  <!-- Header -->
+  <div class="dash-header">
+    <div class="dash-user">
+      <div class="dash-avatar" id="dashAvatar">🐸</div>
+      <div>
+        <div class="dash-name" id="dashName">CryptoFrog</div>
+        <div class="dash-email" id="dashEmail"><a href="/cdn-cgi/l/email-protection" class="__cf_email__" data-cfemail="5b2b373a223e291b3e363a323775383436">[email&#160;protected]</a></div>
+      </div>
+    </div>
+    <div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;">
+      <div class="dash-badge" id="dashRankBadge">ROOKIE</div>
+      <button onclick="doLogout()" style="background:none;border:none;color:rgba(255,255,255,.4);font-size:.72rem;cursor:pointer;font-family:'Orbitron',monospace;">LOGOUT</button>
+    </div>
+  </div>
+
+  <!-- Body -->
+  <div class="dash-body">
+
+    <!-- Rank -->
+    <div style="text-align:center;margin-bottom:16px;">
+      <div class="rank-badge" id="dashRankFull">🏅 ROOKIE · LEVEL 1</div>
+    </div>
+
+    <!-- Stats Grid -->
+    <div class="dash-section-title">📊 YOUR STATS</div>
+    <div class="dash-stats-grid">
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="ds_score" style="color:#f7931a">0</div>
+        <div class="dash-stat-lbl">Best Score</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="ds_level" style="color:#627eea">1</div>
+        <div class="dash-stat-lbl">Max Level</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="ds_coins" style="color:#ffd700">0</div>
+        <div class="dash-stat-lbl">Crypto Balance</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="ds_combo" style="color:#a855f7">x1</div>
+        <div class="dash-stat-lbl">Max Combo</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="ds_deaths" style="color:#ff1744">0</div>
+        <div class="dash-stat-lbl">Deaths</div>
+      </div>
+      <div class="dash-stat">
+        <div class="dash-stat-val" id="ds_games" style="color:#00e676">0</div>
+        <div class="dash-stat-lbl">Games Played</div>
+      </div>
+    </div>
+
+    <!-- Level Progress -->
+    <div class="dash-section-title">🎯 LEVEL PROGRESS</div>
+    <div class="dash-progress">
+      <div class="dash-prog-header">
+        <div class="dash-prog-label">Overall Completion</div>
+        <div class="dash-prog-pct" id="ds_pct">0%</div>
+      </div>
+      <div class="prog-bar-bg"><div class="prog-bar-fill" id="ds_progBar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:8px;font-size:.7rem;color:rgba(255,255,255,.35);font-family:'Orbitron',monospace;">
+        <span>LV.1</span><span id="ds_zoneLabel">SWAMP CHAIN</span><span>LV.100</span>
+      </div>
+    </div>
+
+    <!-- Crypto Wallet -->
+    <div class="dash-section-title">💰 CRYPTO WALLET</div>
+    <div class="dash-crypto-wallet">
+      <div class="wallet-row">
+        <div class="wallet-coin"><span style="font-size:1.2rem">₿</span><span class="wallet-symbol">BTC</span></div>
+        <div class="wallet-amount" id="w_btc">0</div>
+      </div>
+      <div class="wallet-row">
+        <div class="wallet-coin"><span style="font-size:1.2rem">Ξ</span><span class="wallet-symbol">ETH</span></div>
+        <div class="wallet-amount" id="w_eth">0</div>
+      </div>
+      <div class="wallet-row">
+        <div class="wallet-coin"><span style="font-size:1.2rem">◎</span><span class="wallet-symbol">SOL</span></div>
+        <div class="wallet-amount" id="w_sol">0</div>
+      </div>
+      <div class="wallet-row">
+        <div class="wallet-coin"><span style="font-size:1.2rem">💎</span><span class="wallet-symbol">GEMS</span></div>
+        <div class="wallet-amount" id="w_gems">0</div>
+      </div>
+      <div class="wallet-row" style="border:none;padding-top:10px;margin-top:4px;border-top:1px solid rgba(247,147,26,.2);">
+        <span style="font-family:'Orbitron',monospace;font-size:.8rem;color:rgba(255,255,255,.5);">TOTAL EARNED</span>
+        <div class="wallet-amount" id="w_total" style="color:#00e676">0</div>
+      </div>
+    </div>
+
+    <!-- Achievements -->
+    <div class="dash-section-title">🏆 ACHIEVEMENTS</div>
+    <div class="dash-achievements" id="achievementsGrid"></div>
+
+    <!-- My Frogs Collection -->
+    <div class="dash-section-title">🐸 MY FROG COLLECTION</div>
+    <div id="dashActiveFrogBanner" class="active-frog-banner">
+      <div class="active-frog-emoji" id="dashActiveFrogEmoji">🐸</div>
+      <div class="active-frog-info">
+        <div class="active-frog-name" id="dashActiveFrogName">Classic Frog</div>
+        <div class="active-frog-mult" id="dashActiveFrogMult">×1 Score Multiplier</div>
+        <div class="active-frog-desc" id="dashActiveFrogDesc">Tap any frog below to equip</div>
+      </div>
+    </div>
+    <div class="my-frogs-grid" id="dashFrogsGrid"></div>
+    <button class="dash-btn dash-btn-outline" style="margin-bottom:14px;border-color:rgba(247,147,26,.35);color:#f7931a" onclick="openStore()">🛒 BUY MORE FROGS</button>
+
+    <!-- Action Buttons -->
+    <div class="dash-actions">
+      <button class="dash-btn dash-btn-play" onclick="startGame(1)">▶ NEW GAME</button>
+      <button class="dash-btn dash-btn-play" style="background:linear-gradient(135deg,#627eea,#4a5fd4)" onclick="startGame(PD.maxLevel)">↩ CONTINUE LV.<span id="dashContLvl">1</span></button>
+      <button class="dash-btn dash-btn-outline" onclick="openStore()">🐸 FROG STORE</button>
+      <button class="dash-btn dash-btn-outline" onclick="showLeaderboard()">🏆 LEADERBOARD</button>
+      <button class="dash-btn dash-btn-outline" onclick="showScreen('startScreen')">🏠 MAIN MENU</button>
+      <button class="dash-btn dash-btn-danger" onclick="confirmResetProgress()">🗑 RESET PROGRESS</button>
+    </div>
+
+  </div><!-- end dash-body -->
+</div>
+
+<!-- ══ START ══ -->
+<div id="startScreen" class="screen hidden">
+  <div class="grid-bg"><svg><defs><pattern id="g" width="40" height="40" patternUnits="userSpaceOnUse"><path d="M 40 0 L 0 0 0 40" fill="none" stroke="white" stroke-width=".5"/></pattern></defs><rect width="100%" height="100%" fill="url(#g)"/></svg></div>
+
+  <div class="logo-wrap">
+    <div class="logo-tag">⛓ BLOCKCHAIN EDITION ⛓</div>
+    <div class="frog-hero">🐸</div>
+    <div class="game-logo">FROG HOP</div>
+    <div class="tagline">Collect Crypto · Solve the Path · 100 Levels</div>
+  </div>
+
+  <div class="stats-row" id="playerStats">
+    <div class="stat-box"><div class="stat-val" id="statBest">0</div><div class="stat-lbl">Best Score</div></div>
+    <div class="stat-box"><div class="stat-val" id="statLvl">1</div><div class="stat-lbl">Max Level</div></div>
+    <div class="stat-box"><div class="stat-val" id="statCoins">0</div><div class="stat-lbl">Crypto Balance</div></div>
+    <div class="stat-box"><div class="stat-val" id="statDeaths">0</div><div class="stat-lbl">Deaths</div></div>
+  </div>
+
+  <button class="btn btn-primary" onclick="startGame(1)">▶ PLAY NOW</button>
+  <button class="btn btn-secondary" onclick="startGame(PD.maxLevel)">↩ Continue Lv.<span id="contLvl">1</span></button>
+  <button class="btn btn-secondary" onclick="openStore()">🐸 Frog Store</button>
+  <button class="btn btn-secondary" onclick="showScreen('dashboardScreen');renderDashboard()">👤 My Dashboard</button>
+  <button class="btn btn-secondary" onclick="showLeaderboard()">🏆 Leaderboard</button>
+
+</div>
+
+<!-- ══ GAME ══ -->
+<div id="gameScreen" class="screen hidden">
+  <div id="hud">
+    <div class="hud-item">🪙<span id="cryptoDisplay">0</span></div>
+    <div class="hud-item">🎯<span id="levelDisplay">Lv.1</span></div>
+    <div class="hud-item" style="color:#ffd700;font-weight:900">🪙<span id="coinCounter" style="font-family:'Orbitron',monospace">0/0</span></div>
+    <div class="hud-item"><span id="frogHudBadge" style="font-family:'Orbitron',monospace;font-size:.85rem">🐸</span></div>
+    <div class="hud-item">❤️<span id="livesDisplay">3</span></div>
+    <div class="hud-item">🔥<span id="comboDisplay">x1</span></div>
+    <canvas id="timerArc"></canvas>
+    <div class="hud-item">⏱<span id="timerDisplay">25</span></div>
+    <div class="hud-item" onclick="pauseGame()" style="cursor:pointer;font-size:1.2rem;">⏸</div>
+  </div>
+  <div id="hintBar" id="hintBar">💡 Find the safe path to the ☕ — not every tile is reachable!</div>
+  <div id="canvas-container">
+    <div id="levelProg"><div id="levelProgBar" style="width:0%"></div></div>
+    <canvas id="gameCanvas"></canvas>
+  </div>
+  <div id="controls">
+    <button class="ctrl-btn" id="btnLeft" onmousedown="kd('left')" onmouseup="ku('left')" ontouchstart="evt(event,'left',true)" ontouchend="evt(event,'left',false)">◀</button>
+    <button class="ctrl-btn" id="btnDown" onmousedown="kd('down')" onmouseup="ku('down')" ontouchstart="evt(event,'down',true)" ontouchend="evt(event,'down',false)">▼</button>
+    <button class="ctrl-btn" id="btnUp"   onmousedown="kd('up')"   onmouseup="ku('up')"   ontouchstart="evt(event,'up',true)"   ontouchend="evt(event,'up',false)">▲</button>
+    <button class="ctrl-btn" id="btnRight"onmousedown="kd('right')" onmouseup="ku('right')" ontouchstart="evt(event,'right',true)" ontouchend="evt(event,'right',false)">▶</button>
+  </div>
+</div>
+
+<!-- ══ LEVEL COMPLETE ══ -->
+<div id="lvlCompleteScreen" class="overlay-screen hidden">
+  <div class="ov-emoji">🎉</div>
+  <div class="ov-title" style="color:#f7931a">LEVEL CLEAR!</div>
+  <div class="score-card">
+    <div class="sc-row"><span>Crypto Collected</span><span id="lc_coins">0</span></div>
+    <div class="sc-row"><span>Combo Bonus</span><span id="lc_combo">0</span></div>
+    <div class="sc-row"><span>Speed Bonus</span><span id="lc_speed">0</span></div>
+    <div class="sc-row"><span>Level Bonus</span><span id="lc_lvl">0</span></div>
+    <div class="sc-row total"><span>TOTAL SCORE</span><span id="lc_total">0</span></div>
+    <div class="sc-row" style="color:#00e676;font-family:'Orbitron',monospace;border:none;padding-top:6px"><span>₿ CRYPTO EARNED</span><span id="lc_crypto">+0.0000₿</span></div>
+  </div>
+  <button class="btn btn-primary" onclick="nextLevel()">NEXT LEVEL ➡</button>
+</div>
+
+<!-- ══ DEATH ══ -->
+<div id="deathScreen" class="overlay-screen hidden">
+  <div class="ov-emoji" id="dEmoji">💀</div>
+  <div class="ov-title" style="color:var(--danger)" id="dTitle">DEAD!</div>
+  <div class="score-card">
+    <div class="sc-row"><span>Level Reached</span><span id="d_lvl">1</span></div>
+    <div class="sc-row"><span>Score</span><span id="d_score">0</span></div>
+    <div class="sc-row"><span>Best Score</span><span id="d_best">0</span></div>
+    <div class="sc-row"><span>Max Combo</span><span id="d_combo">x1</span></div>
+    <div class="sc-row" style="color:#ff6b6b;border:none;font-size:.78rem"><span>💸 Crypto Lost</span><span id="d_crypto_deduct">0₿</span></div>
+  </div>
+  <button class="btn btn-primary" onclick="restartLevel()">🔄 TRY AGAIN</button>
+  <button class="btn btn-secondary" onclick="goMenu()">🏠 Menu</button>
+</div>
+
+<!-- ══ WIN ══ -->
+<div id="winScreen" class="overlay-screen hidden">
+  <div class="ov-emoji">🏆</div>
+  <div class="ov-title" style="color:#f7931a">CRYPTO GOD!</div>
+  <p style="color:rgba(255,255,255,.7);margin-bottom:18px;text-align:center;font-weight:700;font-family:'Orbitron',monospace;font-size:.9rem;">
+    ALL 100 LEVELS COMPLETE!<br>🐸 LEGEND STATUS UNLOCKED 🐸
+  </p>
+  <div class="score-card"><div class="sc-row total"><span>Final Score</span><span id="win_score">0</span></div></div>
+  <button class="btn btn-primary" onclick="startGame(1)">🔁 Play Again</button>
+  <button class="btn btn-secondary" onclick="goMenu()">🏠 Menu</button>
+</div>
+
+<!-- ══ FROG STORE ══ -->
+<div id="storeScreen" class="screen hidden">
+  <div class="store-header">
+    <div class="store-title">🐸 FROG STORE</div>
+    <div class="store-balance">Balance: <span id="storeBalance">0.0000</span>₿</div>
+    <div style="font-size:.7rem;color:rgba(255,255,255,.4);font-family:'Orbitron',monospace;">100,000 score = 1₿</div>
+    <div id="storeActiveMult" style="font-size:.68rem;font-family:'Orbitron',monospace;color:#f7931a;margin-top:4px;padding:4px 10px;background:rgba(247,147,26,.1);border-radius:8px;display:none;"></div>
+  </div>
+  <div class="store-grid" id="storeGrid"></div>
+  <button class="btn btn-secondary" style="margin:12px auto;display:block" onclick="closeStore()">← BACK</button>
+</div>
+
+<!-- ══ ADMIN LOGIN ══ -->
+<div id="adminLoginScreen" class="screen hidden">
+  <div style="text-align:center;margin-bottom:20px;">
+    <div style="font-size:3rem;margin-bottom:8px;">🔐</div>
+    <div class="admin-logo">ADMIN PANEL</div>
+    <div class="admin-sub">⚠️ Restricted Access ⚠️</div>
+  </div>
+  <div class="admin-login-card">
+    <div class="admin-err" id="adminLoginErr"></div>
+    <div class="input-group">
+      <label class="input-label" style="color:rgba(255,80,80,.7)">Admin Password</label>
+      <div class="input-wrap">
+        <span class="input-icon">🔑</span>
+        <input class="auth-input" id="adminPassInput" type="password" placeholder="Enter admin password"
+          onkeydown="if(event.key==='Enter')doAdminLogin()">
+        <button class="pass-toggle" onclick="togglePass('adminPassInput',this)" tabindex="-1">👁</button>
+      </div>
+    </div>
+    <button class="btn-auth" style="background:linear-gradient(135deg,#ff4444,#cc0000);margin-top:4px" onclick="doAdminLogin()">🔐 ENTER ADMIN</button>
+    <button class="btn-auth-outline" style="margin-top:10px" onclick="showScreen('authScreen')">← Back to Game</button>
+  </div>
+</div>
+
+<!-- ══ ADMIN DASHBOARD ══ -->
+<div id="adminScreen" class="screen hidden">
+  <div class="admin-header">
+    <div>
+      <div class="admin-title">🛡 ADMIN PANEL</div>
+      <div style="font-size:.6rem;color:rgba(255,100,100,.5);font-family:'Orbitron',monospace;letter-spacing:2px;">FROG HOP CRYPTO</div>
+    </div>
+    <button class="btn-admin-logout" onclick="doAdminLogout()">LOGOUT 🔒</button>
+  </div>
+  <div class="admin-body">
+    <!-- Stats overview -->
+    <div class="admin-section-title">📊 SYSTEM OVERVIEW</div>
+    <div class="admin-stats-row">
+      <div class="admin-stat-box"><div class="admin-stat-val" id="adm_totalPlayers">0</div><div class="admin-stat-lbl">Players</div></div>
+      <div class="admin-stat-box"><div class="admin-stat-val" id="adm_totalCrypto">0</div><div class="admin-stat-lbl">Total ₿</div></div>
+      <div class="admin-stat-box"><div class="admin-stat-val" id="adm_topScore">0</div><div class="admin-stat-lbl">Top Score</div></div>
+    </div>
+
+    <!-- Player Management -->
+    <div class="admin-section-title">👥 PLAYER MANAGEMENT</div>
+    <input class="admin-search" id="adminSearch" type="text" placeholder="🔍 Search by name, email or phone..."
+      oninput="filterAdminPlayers()">
+    <div id="adminPlayerList"></div>
+  </div>
+</div>
+
+<!-- ══ LEADERBOARD ══ -->
+<div id="leaderboardScreen" class="screen hidden">
+  <div class="lb-title">🏆 LEADERBOARD</div>
+  <div class="lb-list" id="lbList"></div>
+  <button class="btn btn-secondary" style="margin-top:18px" onclick="goMenu()">← Back</button>
+</div>
+
+<!-- Buy Confirm Modal -->
+<div id="buyConfirmModal">
+  <div class="buy-modal-box">
+    <span class="buy-modal-emoji" id="bmEmoji">🐸</span>
+    <div class="buy-modal-title" id="bmTitle">Buy Frog?</div>
+    <div class="buy-modal-price" id="bmPrice">50₿</div>
+    <div id="bmMult" class="buy-modal-mult" style="display:none"></div>
+    <div class="buy-modal-balance" id="bmBalance">Balance: 0.0000₿</div>
+    <div class="buy-modal-btns">
+      <button class="buy-modal-cancel" onclick="closeBuyModal()">CANCEL</button>
+      <button class="buy-modal-confirm" id="bmConfirmBtn" onclick="confirmBuyFrog()">BUY NOW ✓</button>
+    </div>
+  </div>
+</div>
+
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
+'use strict';
+
+
+
+// Add these constants at the top of your script
+const API_BASE = '/api';
+const ADMIN_SECRET = 'adm_frogcrypto_2024'; // Must match server
+
+// Replace doSignup function
+async function doSignup(){
+  clearAuthMessages();
+  const name=document.getElementById('signupName').value.trim();
+  const pass=document.getElementById('signupPass').value;
+  const pass2=document.getElementById('signupPass2').value;
+  const identifier=signupMethod==='email'
+    ? document.getElementById('signupEmail').value.trim().toLowerCase()
+    : document.getElementById('signupPhone').value.trim();
+
+  if(!name||name.length<2){showAuthMsg('signupErr','⚠️ Enter a display name (min 2 chars)');return;}
+  if(signupMethod==='email'&&!validateEmail(identifier)){showAuthMsg('signupErr','⚠️ Enter a valid email address');return;}
+  if(signupMethod==='phone'&&!validatePhone(identifier)){showAuthMsg('signupErr','⚠️ Enter a valid phone number');return;}
+  if(pass.length<6){showAuthMsg('signupErr','⚠️ Password must be at least 6 characters');return;}
+  if(pass!==pass2){showAuthMsg('signupErr','⚠️ Passwords do not match');return;}
+
+  const btn=document.getElementById('signupBtn');
+  btn.classList.add('btn-loading');
+  btn.textContent='Creating...';
+
+  try {
+    const response = await fetch(API_BASE+'/auth/signup', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name,
+        email: signupMethod === 'email' ? identifier : '',
+        phone: signupMethod === 'phone' ? identifier : '',
+        password: pass,
+        avatar: selectedAvatar
+      })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showAuthMsg('signupErr', '❌ ' + (data.error || 'Sign up failed'));
+      btn.classList.remove('btn-loading');
+      btn.textContent='🚀 CREATE ACCOUNT';
+      return;
+    }
+
+    currentAccount = { id: data.userId, name };
+    PD = {
+      id: data.userId,
+      name,
+      bestScore: 0,
+      maxLevel: 1,
+      totalCoins: 0,
+      totalDeaths: 0,
+      maxCombo: 1,
+      gamesPlayed: 0,
+      totalGems: 0,
+      cryptoEarned: 0,
+      cryptoBalance: 0,
+      ownedFrogs: [0],
+      equippedFrog: 0,
+      storeReturnScreen: 'startScreen'
+    };
+
+    saveSession(data.userId);
+    btn.classList.remove('btn-loading');
+    btn.textContent='🚀 CREATE ACCOUNT';
+    showAuthMsg('signupOk','✅ Account created!',true);
+
+    setTimeout(()=>{
+      showScreen('dashboardScreen');
+      renderDashboard();
+    },1000);
+  } catch (error) {
+    console.error('Signup error:', error);
+    showAuthMsg('signupErr','❌ Network error. Try again.');
+    btn.classList.remove('btn-loading');
+    btn.textContent='🚀 CREATE ACCOUNT';
+  }
+}
+
+// Replace doLogin function
+async function doLogin(){
+  clearAuthMessages();
+  const pass=document.getElementById('loginPass').value;
+  const identifier=loginMethod==='email'
+    ? document.getElementById('loginEmail').value.trim().toLowerCase()
+    : document.getElementById('loginPhone').value.trim();
+
+  if(!identifier){showAuthMsg('loginErr','⚠️ Enter your email or phone number');return;}
+  if(!pass){showAuthMsg('loginErr','⚠️ Enter your password');return;}
+
+  const btn=document.getElementById('loginBtn');
+  btn.classList.add('btn-loading');
+  btn.textContent='Logging in...';
+
+  try {
+    const response = await fetch(API_BASE+'/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ identifier, password: pass })
+    });
+
+    const data = await response.json();
+
+    if (!response.ok) {
+      showAuthMsg('loginErr', '❌ ' + (data.error || 'Login failed'));
+      btn.classList.remove('btn-loading');
+      btn.textContent='▶ LOGIN';
+      return;
+    }
+
+    currentAccount = data.player;
+    PD = {
+      id: data.player.id,
+      name: data.player.name,
+      bestScore: data.player.bestScore,
+      maxLevel: data.player.maxLevel,
+      totalCoins: data.player.totalCoins,
+      totalDeaths: data.player.totalDeaths,
+      maxCombo: data.player.maxCombo,
+      gamesPlayed: data.player.gamesPlayed,
+      totalGems: data.player.totalGems,
+      cryptoEarned: data.player.cryptoEarned,
+      cryptoBalance: data.player.cryptoBalance,
+      ownedFrogs: data.player.ownedFrogs,
+      equippedFrog: data.player.equippedFrog,
+      wallet: data.player.wallet,
+      storeReturnScreen: 'startScreen'
+    };
+
+    saveSession(data.player.id);
+    btn.classList.remove('btn-loading');
+    btn.textContent='▶ LOGIN';
+    
+    showScreen('dashboardScreen');
+    renderDashboard();
+  } catch (error) {
+    console.error('Login error:', error);
+    showAuthMsg('loginErr','❌ Network error. Try again.');
+    btn.classList.remove('btn-loading');
+    btn.textContent='▶ LOGIN';
+  }
+}
+
+// Replace savePD function
+async function savePD(){
+  if(!PD.id) return;
+  
+  try {
+    await fetch(API_BASE+'/player/saveProgress', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        playerId: PD.id,
+        bestScore: PD.bestScore,
+        maxLevel: PD.maxLevel,
+        totalCoins: PD.totalCoins,
+        totalDeaths: PD.totalDeaths,
+        maxCombo: PD.maxCombo,
+        gamesPlayed: PD.gamesPlayed,
+        totalGems: PD.totalGems,
+        cryptoEarned: PD.cryptoEarned,
+        cryptoBalance: PD.cryptoBalance,
+        ownedFrogs: PD.ownedFrogs,
+        equippedFrog: PD.equippedFrog,
+        wallet: PD.wallet
+      })
+    });
+  } catch (error) {
+    console.error('Save progress error:', error);
+  }
+}
+
+// Replace loadAdminDashboard function
+async function loadAdminDashboard(){
+  try {
+    const response = await fetch(API_BASE+'/admin/getAllPlayers', {
+      headers: { 'x-admin-token': ADMIN_SECRET }
+    });
+
+    if (!response.ok) {
+      toast('❌ Admin authentication failed');
+      return;
+    }
+
+    const data = await response.json();
+    adminPlayers = data.players || [];
+
+    document.getElementById('adm_totalPlayers').textContent = adminPlayers.length;
+    const totalCrypto = adminPlayers.reduce((s,p) => s + (p.cryptoBalance || 0), 0);
+    document.getElementById('adm_totalCrypto').textContent = totalCrypto.toFixed(2) + '₿';
+    const topScore = Math.max(0, ...adminPlayers.map(p => p.bestScore || 0));
+    document.getElementById('adm_topScore').textContent = topScore.toLocaleString();
+
+    renderAdminPlayers(adminPlayers);
+  } catch (error) {
+    console.error('Load admin dashboard error:', error);
+    toast('❌ Failed to load player data');
+  }
+}
+
+// Replace savePlayerEdit function
+async function savePlayerEdit(id){
+  const acc = adminPlayers.find(a => a.id === id);
+  if(!acc){ toast('❌ Player not found'); return; }
+
+  const name = document.getElementById('ef_name_' + id)?.value.trim();
+  const email = document.getElementById('ef_email_' + id)?.value.trim().toLowerCase();
+  const crypto = parseFloat(document.getElementById('ef_crypto_' + id)?.value) || 0;
+  const score = parseInt(document.getElementById('ef_score_' + id)?.value) || 0;
+  const level = Math.min(100, Math.max(1, parseInt(document.getElementById('ef_level_' + id)?.value) || 1));
+  const newPass = document.getElementById('ef_pass_' + id)?.value;
+
+  if(!name || name.length < 1){ toast('❌ Name cannot be empty'); return; }
+
+  const liveAcc = adminPlayers.find(a => a.id === id) || acc;
+  const equippedFrogVal = parseInt(document.getElementById('ef_equipped_' + id)?.value || '0');
+  const updatedOwned = liveAcc.ownedFrogs || [0];
+  if(!updatedOwned.includes(equippedFrogVal)) updatedOwned.unshift(equippedFrogVal);
+
+  try {
+    const response = await fetch(API_BASE+'/admin/updatePlayer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': ADMIN_SECRET
+      },
+      body: JSON.stringify({
+        playerId: id,
+        name,
+        email: email || undefined,
+        bestScore: score,
+        maxLevel: level,
+        cryptoBalance: crypto,
+        ownedFrogs: updatedOwned,
+        equippedFrog: equippedFrogVal,
+        newPassword: newPass || undefined
+      })
+    });
+
+    if (!response.ok) {
+      toast('❌ Update failed');
+      return;
+    }
+
+    toast('✅ ' + name + ' updated!');
+    loadAdminDashboard();
+  } catch (error) {
+    console.error('Save player error:', error);
+    toast('❌ Network error');
+  }
+}
+
+// Replace deletePlayer function
+async function deletePlayer(id, name){
+  if(!confirm('⚠️ Delete account for ' + name + '?\nThis cannot be undone!')) return;
+
+  try {
+    const response = await fetch(API_BASE+'/admin/deletePlayer', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-admin-token': ADMIN_SECRET
+      },
+      body: JSON.stringify({ playerId: id })
+    });
+
+    if (!response.ok) {
+      toast('❌ Delete failed');
+      return;
+    }
+
+    toast('🗑 ' + name + ' deleted');
+    loadAdminDashboard();
+  } catch (error) {
+    console.error('Delete player error:', error);
+    toast('❌ Network error');
+  }
+}
+
+// Update showLeaderboard function
+async function showLeaderboard(){
+  showScreen('leaderboardScreen');
+  try {
+    const response = await fetch(API_BASE+'/leaderboard/getTop?limit=50');
+    const data = await response.json();
+    const all = data.leaderboard || [];
+    
+    const list=document.getElementById('lbList');
+    list.innerHTML='';
+    all.forEach((p,i)=>{
+      const rk=i===0?'gold':i===1?'silver':i===2?'bronze':'';
+      const m=['🥇','🥈','🥉'];
+      const d=document.createElement('div');
+      d.className='lb-item'+(p.id===playerId?' me':'');
+      d.innerHTML=`<div class="lb-rank ${rk}">${i<3?m[i]:i+1}</div><div class="lb-name">${p.name}${p.id===playerId?' (You)':''}</div><div><div class="lb-score">${(p.score||0).toLocaleString()}</div><div class="lb-lvl">Lv.${p.level||1} · x${p.combo||1}</div></div>`;
+      list.appendChild(d);
+    });
+  } catch (error) {
+    console.error('Load leaderboard error:', error);
+    toast('❌ Failed to load leaderboard');
+  }
+}
+
+
+
+
+
+
+
+// ═══════════════ DB ═══════════════
+let db=null;
+function openDB(){return new Promise(r=>{const q=indexedDB.open('FrogCryptoDB',1);q.onupgradeneeded=e=>{const d=e.target.result;if(!d.objectStoreNames.contains('players'))d.createObjectStore('players',{keyPath:'id'});if(!d.objectStoreNames.contains('lb'))d.createObjectStore('lb',{keyPath:'id'});};q.onsuccess=e=>{db=e.target.result;r(db);};q.onerror=()=>r(null);});}
+function dbG(s,k){if(!db){try{return Promise.resolve(JSON.parse(localStorage.getItem(s+'_'+k)));}catch{return Promise.resolve(null);}}return new Promise(r=>{const t=db.transaction(s,'readonly'),q=t.objectStore(s).get(k);q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null);});}
+function dbP(s,d){if(!db){localStorage.setItem(s+'_'+d.id,JSON.stringify(d));return Promise.resolve();}return new Promise(r=>{const t=db.transaction(s,'readwrite');t.objectStore(s).put(d);t.oncomplete=r;t.onerror=r;});}
+function dbA(s){if(!db){return Promise.resolve(Object.keys(localStorage).filter(k=>k.startsWith(s+'_')).map(k=>{try{return JSON.parse(localStorage.getItem(k));}catch{return null;}}).filter(Boolean));}return new Promise(r=>{const t=db.transaction(s,'readonly'),q=t.objectStore(s).getAll();q.onsuccess=()=>r(q.result||[]);q.onerror=()=>r([]);});}
+
+// ═══════════════ TELEGRAM ═══════════════
+let playerId='guest_'+Math.random().toString(36).substr(2,8),playerName='Crypto Frog';
+try{const tg=window.Telegram?.WebApp;if(tg?.initDataUnsafe?.user){const u=tg.initDataUnsafe.user;playerId='tg_'+u.id;playerName=((u.first_name||'')+' '+(u.last_name||'')).trim()||u.username||'CryptoFrog';tg.ready();tg.expand();}}catch(e){}
+
+// ═══════════════ PLAYER DATA ═══════════════
+let PD={id:playerId,name:playerName,bestScore:0,maxLevel:1,totalCoins:0,totalDeaths:0,maxCombo:1,cryptoEarned:0,cryptoBalance:0,ownedFrogs:[0],equippedFrog:0,storeReturnScreen:'startScreen'};
+async function loadPD(){const s=await dbG('players',playerId);if(s)PD={...PD,...s,id:playerId,name:playerName};updateStart();}
+async function savePD(){await dbP('players',PD);await dbP('lb',{id:playerId,name:playerName,score:PD.bestScore,level:PD.maxLevel,combo:PD.maxCombo});}
+function updateStart(){
+  document.getElementById('statBest').textContent=PD.bestScore.toLocaleString();
+  document.getElementById('statLvl').textContent=PD.maxLevel;
+  document.getElementById('statCoins').textContent=(PD.cryptoBalance||0).toFixed(4)+'₿';
+  document.getElementById('statDeaths').textContent=PD.totalDeaths;
+  document.getElementById('contLvl').textContent=PD.maxLevel;
+}
+
+// ═══════════════ CANVAS ═══════════════
+const canvas=document.getElementById('gameCanvas');
+const ctx=canvas.getContext('2d');
+const arcC=document.getElementById('timerArc');
+const arcCtx=arcC.getContext('2d');
+arcC.width=arcC.height=76;
+let TILE=52;
+
+// ═══════════════ CRYPTO COINS CONFIG ═══════════════
+// Each coin type: symbol, colors, label
+const CRYPTO_COINS=[
+  {sym:'₿', label:'BTC', inner:'#f7931a', outer:'#c05c00', glow:'rgba(247,147,26,.8)', ring:'#ffd700'},
+  {sym:'Ξ', label:'ETH', inner:'#627eea', outer:'#3a4fb5', glow:'rgba(98,126,234,.8)', ring:'#a0b4ff'},
+  {sym:'◎', label:'SOL', inner:'#9945ff', outer:'#6e1fdb', glow:'rgba(153,69,255,.8)', ring:'#c980ff'},
+  {sym:'●', label:'BNB', inner:'#f3ba2f', outer:'#c48c00', glow:'rgba(243,186,47,.8)', ring:'#ffe570'},
+  {sym:'◈', label:'ADA', inner:'#0033ad', outer:'#001f70', glow:'rgba(0,51,173,.8)', ring:'#4d7fff'},
+  {sym:'⬡', label:'MATIC', inner:'#8247e5', outer:'#5a1fa0', glow:'rgba(130,71,229,.8)', ring:'#b47aff'},
+  {sym:'⬦', label:'DOGE', inner:'#c2a633', outer:'#8a7010', glow:'rgba(194,166,51,.8)', ring:'#f0d060'},
+  {sym:'✦', label:'DOT', inner:'#e6007a', outer:'#a0004f', glow:'rgba(230,0,122,.8)', ring:'#ff50a8'},
+];
+// Gems (super rare)
+const GEM_TYPES=[
+  {sym:'💎', label:'GEM', glow:'rgba(0,229,255,.9)', val:10},
+  {sym:'🔷', label:'SAPPHIRE', glow:'rgba(0,100,255,.9)', val:8},
+  {sym:'♦', label:'DIAMOND', glow:'rgba(200,240,255,.9)', val:12},
+];
+
+// ═══════════════ GAME STATE ═══════════════
+let GS=null,animId=null,lastT=0;
+let inputQ=[],jumpAnim={active:false,progress:0,fromR:0,fromC:0,toR:0,toC:0};
+let coinAnims=[],deathAnim={active:false,timer:0};
+let currentScore=0,currentCombo=1,maxCombo=1;
+let levelTimer=25,lvlStartTime=0,timerPaused=false;
+let bgStars=[],bgNebula=[];
+let projectiles=[],lastProjT=0;
+let screenshaking=false;
+
+// ═══════════════ PUZZLE PATH GENERATOR ═══════════════
+// Core concept: builds a MAZE-LIKE grid where there are MULTIPLE wrong paths
+// but only ONE valid route (or a few hard routes) that leads to the goal.
+// Uses a constrained BFS-based generator that ensures exactly one clear solution.
+
+function buildPuzzlePath(rows,cols,lvl){
+  // We'll carve a solution path using DFS with backtracking
+  // then fill the rest with traps and dead ends
+  const startC=Math.floor(cols/2);
+  const goalC=Math.floor(cols/2);
+
+  // Path is carved from bottom (startR=rows-1) to top (goalR=0)
+  // Each step can go up, left, or right — creating a zigzag puzzle
+  const visited=Array.from({length:rows},()=>Array(cols).fill(false));
+  const pathCells=new Set();
+  const path=[];
+
+  // Zigzag carve — at high levels, force detours
+  let r=rows-1,c=startC;
+  path.push({r,c});
+  pathCells.add(r+','+c);
+  visited[r][c]=true;
+
+  const maxSteps=rows*cols*3;
+  let steps=0;
+  // Directions weighted: prefer going UP (70%), sideways (30%)
+  while(r>0&&steps<maxSteps){
+    steps++;
+    const dirs=[];
+    // Up (heavily preferred at low level, less at high)
+    const upProb=Math.max(0.3,0.75-(lvl*0.004));
+    const sideProb=(1-upProb)/2;
+    if(r-1>=0&&!visited[r-1][c])dirs.push({dr:-1,dc:0,w:upProb});
+    if(c-1>=0&&!visited[r][c-1])dirs.push({dr:0,dc:-1,w:sideProb});
+    if(c+1<cols&&!visited[r][c+1])dirs.push({dr:0,dc:1,w:sideProb});
+    // Also allow going down occasionally at high levels (forces backtracking)
+    if(lvl>40&&r+1<rows&&!visited[r+1][c]&&Math.random()<0.08)dirs.push({dr:1,dc:0,w:.03});
+
+    if(dirs.length===0){
+      // Backtrack
+      if(path.length>1){path.pop();const prev=path[path.length-1];r=prev.r;c=prev.c;}
+      else break;
+      continue;
+    }
+    // Weighted pick
+    const totalW=dirs.reduce((s,d)=>s+d.w,0);
+    let rnd=Math.random()*totalW,chosen=dirs[dirs.length-1];
+    for(const d of dirs){rnd-=d.w;if(rnd<=0){chosen=d;break;}}
+    r+=chosen.dr;c+=chosen.dc;
+    visited[r][c]=true;
+    path.push({r,c});
+    pathCells.add(r+','+c);
+  }
+  // Force connect to goal row if not already there
+  while(r>0){r--;path.push({r,c});pathCells.add(r+','+c);}
+  // Force goal
+  pathCells.add('0,'+goalC);
+
+  return{pathCells,startC,goalC,actualPath:path};
+}
+
+// ═══════════════ LEVEL GENERATION ═══════════════
+// Timer: starts at 28s for lv1, decreases 0.22s per level → lv100 = ~6s
+function getLevelTimer(lvl){return Math.max(6,28-(lvl-1)*0.224);}
+
+// Zones
+const ZONES=[
+  {name:'🌿 SWAMP CHAIN',  bg:'#020e02',w:'#041804',ac:'#39ff14',th:'acid'},
+  {name:'🌋 LAVA LEDGER',  bg:'#0f0300',w:'#3d0800',ac:'#ff4500',th:'lava'},
+  {name:'🧊 FROZEN BLOCK', bg:'#000d1a',w:'#001a33',ac:'#00cfff',th:'ice'},
+  {name:'☠️ VOID WALLET',  bg:'#06000f',w:'#10002a',ac:'#a855f7',th:'void'},
+  {name:'⚡ STORM NODE',   bg:'#0a0a00',w:'#1a1a00',ac:'#fbbf24',th:'storm'},
+];
+
+function getZone(lvl){return ZONES[Math.floor((lvl-1)/20)];}
+
+function generateLevel(lvl){
+  const zone=getZone(lvl);
+  // Grid grows with level
+  const rows=Math.min(6+Math.floor(lvl/7),15);
+  const cols=Math.min(5+Math.floor(lvl/9),11);
+
+  // Danger scaling
+  const gapRatio=Math.min(0.20+lvl*0.006,0.65);   // water gaps
+  const sinkP=Math.min(lvl*0.005,0.14);
+  const iceP=zone.th==='ice'?0.20:Math.min(lvl*.003,.09);
+  const spikeP=Math.min(lvl*.0035,.12);
+  const vanishP=Math.min(lvl*.002,.09);
+  const bombP=Math.min(lvl*.0018,.07);
+  const portalP=lvl>30?Math.min((lvl-30)*.002,.06):0;
+  const lavaP=zone.th==='lava'?0.14:Math.min(lvl*.002,.06);
+  const fakeP=Math.min(lvl*.003,.12); // FAKE safe tiles that look like lily but are water
+
+  // Build puzzle path
+  const {pathCells,startC,goalC}=buildPuzzlePath(rows,cols,lvl);
+
+  const grid=[];
+  for(let r=0;r<rows;r++){
+    grid.push([]);
+    for(let c=0;c<cols;c++){
+      const key=r+','+c;
+      const isPath=pathCells.has(key);
+      const isGoal=r===0&&c===goalC;
+      const isStart=r===rows-1&&c===startC;
+
+      let type='water';
+
+      if(isGoal){type='goal';}
+      else if(isStart){type='start';}
+      else if(isPath){
+        // Path tiles: mostly lily, but some special
+        const r2=Math.random();
+        if(r2<sinkP*0.5&&!isStart)type='sinking';      // sinking on path (risky!)
+        else if(r2<sinkP*0.5+iceP*0.3)type='ice';
+        else type='lily';
+      } else {
+        // Non-path cells
+        if(Math.random()<gapRatio){type='water';}
+        else {
+          // Place trap tile or fake safe tile
+          const roll=Math.random();
+          if(roll<lavaP)type='lava';
+          else if(roll<lavaP+spikeP)type='spike';
+          else if(roll<lavaP+spikeP+sinkP)type='sinking';
+          else if(roll<lavaP+spikeP+sinkP+iceP)type='ice';
+          else if(roll<lavaP+spikeP+sinkP+iceP+vanishP)type='vanish';
+          else if(roll<lavaP+spikeP+sinkP+iceP+vanishP+bombP)type='bomb';
+          else if(roll<lavaP+spikeP+sinkP+iceP+vanishP+bombP+portalP)type='portal';
+          else if(roll<lavaP+spikeP+sinkP+iceP+vanishP+bombP+portalP+fakeP)type='fake'; // FAKE!
+          else type='lily';
+        }
+      }
+
+      // Coins: on path tiles only (to reward following the path)
+      const isDeadly=['water','spike','lava','fake'].includes(type);
+      const coinRoll=Math.random();
+      const hasCoin=!isDeadly&&type!=='goal'&&coinRoll<(0.35+lvl*.004);
+      const hasGem=hasCoin&&Math.random()<.05&&lvl>15;
+      const coinType=CRYPTO_COINS[Math.floor(Math.random()*Math.min(CRYPTO_COINS.length,1+Math.floor(lvl/12)))];
+      const gemType=GEM_TYPES[Math.floor(Math.random()*GEM_TYPES.length)];
+
+      // Moving
+      const canMove=isPath&&!isGoal&&!isStart&&type==='lily'&&Math.random()<Math.min(.04+lvl*.003,.35);
+      const movDir=Math.random()<.5?1:-1;
+      const movSpd=.25+lvl*.015;
+      const movRange=.8+Math.floor(Math.random()*1.5);
+
+      grid[r].push({
+        type,
+        coin:hasCoin&&!hasGem,
+        gem:hasGem,
+        coinType,
+        gemType,
+        moving:canMove,movDir,movSpd,movOffset:0,movRange,
+        sinkTimer:0,sinkMax:Math.max(35,100-lvl*.7),
+        vanished:false,vanishRespawn:0,
+        bombDone:false,
+        portalPair:-1,
+        acid:false,
+        fakeReveal:false,  // fake tile revealed when hovered near
+        bounceOff:0,
+      });
+    }
+  }
+
+  // Moving: assign
+  let movCount=0;const maxMov=Math.min(Math.floor(lvl/4),10);
+  for(let r=1;r<rows-1;r++)for(let c=0;c<cols;c++){
+    if(grid[r][c].moving&&movCount<maxMov)movCount++;
+    else grid[r][c].moving=false;
+  }
+
+  // Portal pairs
+  const portals=[];
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++)if(grid[r][c].type==='portal')portals.push({r,c});
+  for(let i=0;i<portals.length-1;i+=2){grid[portals[i].r][portals[i].c].portalPair=i+1;grid[portals[i+1].r][portals[i+1].c].portalPair=i;}
+  if(portals.length%2!==0&&portals.length>0){const l=portals[portals.length-1];grid[l.r][l.c].type='lily';}
+
+  // Projectile rate (from level 25)
+  const projRate=lvl>25?(0.25+lvl*.012):0;
+  // Wind (from level 45)
+  const wind=lvl>45?((Math.random()-.5)*lvl*.013):0;
+
+  const timeLimit=getLevelTimer(lvl);
+
+  // Hint text
+  const hints=[
+    'Some tiles are FAKE — they look safe but will kill you!',
+    'Moving platforms carry you sideways — plan ahead!',
+    'Ice tiles will slide you an extra step!',
+    'Sinking tiles give 3 seconds — stay moving!',
+    'Bombs explode after 0.5s — always jump off immediately!',
+    'Portals warp you to random spots — risky but fast!',
+    'Fake tiles appear solid but are actually water traps!',
+    'Combo x5 multiplies your score massively!',
+    'The path to the ☕ is not always straight up!',
+    'Watch for projectiles from off-screen!',
+  ];
+
+  // Count total coins and gems on the level
+  let totalCoinsOnLevel=0;
+  for(let r=0;r<rows;r++)for(let c=0;c<cols;c++){
+    const t=grid[r][c];
+    if(t.coin)totalCoinsOnLevel++;
+    if(t.gem)totalCoinsOnLevel++;
+  }
+
+  return{
+    grid,rows,cols,frogR:rows-1,frogC:startC,
+    goalR:0,goalC,
+    level:lvl,zone,
+    lives:Math.max(1,3-Math.floor(lvl/22)),
+    score:0,coinsCol:0,
+    timeLimit,projRate,wind,
+    portals,
+    isBoss:lvl%10===0,
+    hint:hints[Math.floor(Math.random()*hints.length)],
+    startC,goalC,
+    totalCoins:totalCoinsOnLevel,
+  };
+}
+
+// ═══════════════ GAME CONTROL ═══════════════
+function startGame(lvl){
+  // Cancel any existing loop first
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  showScreen('gameScreen');
+  // Hide any leftover overlays
+  ['lvlCompleteScreen','deathScreen','winScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  currentScore=0;currentCombo=1;maxCombo=1;
+  initLevel(lvl||1);
+}
+
+function initLevel(lvl){
+  GS=generateLevel(lvl);
+  resizeCanvas();
+  genBg();
+  coinAnims=[];deathAnim={active:false,timer:0};
+  jumpAnim.active=false;inputQ=[];projectiles=[];lastProjT=0;
+  levelTimer=GS.timeLimit;
+  lvlStartTime=performance.now();
+  timerPaused=false;
+
+  // HUD
+  document.getElementById('levelDisplay').textContent='Lv.'+lvl;
+  document.getElementById('livesDisplay').textContent=GS.lives;
+  document.getElementById('comboDisplay').textContent='x1';
+  document.getElementById('coinCounter').textContent='0/'+GS.totalCoins;
+  const hudMult=getEquippedMultiplier();
+  const hudFrog=FROG_STORE_CHARS[PD.equippedFrog||0]||FROG_STORE_CHARS[0];
+  document.getElementById('cryptoDisplay').textContent=(PD.cryptoBalance||0).toFixed(4)+'₿';
+  // Update frog HUD badge
+  const frogHudEl=document.getElementById('frogHudBadge');
+  if(frogHudEl){
+    frogHudEl.textContent=hudFrog.emoji+(hudMult>1?' ×'+hudMult:'');
+    frogHudEl.style.color=hudMult>1?'#f7931a':'rgba(255,255,255,.6)';
+  }
+  document.getElementById('hintBar').textContent='⚠️ Collect ALL '+GS.totalCoins+' coin'+(GS.totalCoins!==1?'s':'')+'  to pass! Missing any = 90% score & crypto penalty!';
+  document.getElementById('levelProgBar').style.width=(((lvl-1)/100)*100)+'%';
+  document.getElementById('dangerVig').classList.remove('on');
+  updateTimerHUD();
+
+  // Level banner
+  const banner=document.getElementById('lvlBanner');
+  banner.innerHTML=GS.isBoss?`👹 BOSS LV.${lvl}<br><span style="font-size:.6em;color:var(--accent)">MAXIMUM DANGER</span>`
+    :`${GS.zone.name}<br><span style="font-size:.55em;color:rgba(255,255,255,.6)">LEVEL ${lvl} · ⏱ ${GS.timeLimit.toFixed(1)}s</span>`;
+  banner.classList.add('show');
+  setTimeout(()=>banner.classList.remove('show'),2200);
+
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  lastT=performance.now();animId=requestAnimationFrame(loop);
+}
+
+function resizeCanvas(){
+  const con=document.getElementById('canvas-container');
+  canvas.width=con.clientWidth;canvas.height=con.clientHeight;
+  if(GS){
+    TILE=Math.max(30,Math.min(Math.floor(canvas.width/GS.cols),Math.floor(canvas.height/GS.rows),66));
+  }
+}
+
+function genBg(){
+  bgStars=[];for(let i=0;i<90;i++)bgStars.push({x:Math.random(),y:Math.random(),r:Math.random()*1.4+.3,a:Math.random()*.5+.1,tw:Math.random()*Math.PI*2,v:Math.random()*.0008+.0003});
+  bgNebula=[];for(let i=0;i<6;i++)bgNebula.push({x:Math.random(),y:Math.random(),r:Math.random()*150+80,c:Math.floor(Math.random()*3)});
+}
+
+// ═══════════════ LOOP ═══════════════
+function loop(ts){const dt=Math.min(ts-lastT,50);lastT=ts;update(dt);render();animId=requestAnimationFrame(loop);}
+
+// ═══════════════ UPDATE ═══════════════
+function update(dt){
+  if(!GS)return;
+  if(deathAnim.active){deathAnim.timer+=dt;if(deathAnim.timer>900){deathAnim.active=false;showDeathScrn();}return;}
+
+  // Timer
+  if(!timerPaused&&!jumpAnim.active){
+    levelTimer-=dt/1000;
+    if(levelTimer<=0){levelTimer=0;die('time');return;}
+    updateTimerHUD();
+    const tEl=document.getElementById('timerDisplay');
+    if(levelTimer<5){tEl.classList.add('urgent');tEl.classList.remove('warn');document.getElementById('dangerVig').classList.add('on');}
+    else if(levelTimer<10){tEl.classList.add('warn');tEl.classList.remove('urgent');document.getElementById('dangerVig').classList.remove('on');}
+    else{tEl.className='';document.getElementById('dangerVig').classList.remove('on');}
+  }
+
+  // Input
+  if(!jumpAnim.active&&inputQ.length>0)moveFrog(inputQ.shift());
+
+  // Jump
+  if(jumpAnim.active){jumpAnim.progress+=dt*.0072;if(jumpAnim.progress>=1){jumpAnim.progress=1;jumpAnim.active=false;land();}}
+
+  // Tiles
+  const G=GS.grid;
+  for(let r=0;r<GS.rows;r++){
+    for(let c=0;c<GS.cols;c++){
+      const t=G[r][c];
+      if(t.moving){t.movOffset+=t.movDir*t.movSpd*dt*.001;if(Math.abs(t.movOffset)>=t.movRange)t.movDir*=-1;t.movOffset=Math.max(-t.movRange,Math.min(t.movRange,t.movOffset));}
+      if(t.type==='sinking'&&r===GS.frogR&&c===GS.frogC&&!jumpAnim.active){t.sinkTimer+=dt;if(t.sinkTimer>t.sinkMax){die('sinking');return;}}
+      else if(t.sinkTimer>0&&!(r===GS.frogR&&c===GS.frogC))t.sinkTimer=Math.max(0,t.sinkTimer-dt*.4);
+      if(t.vanished){t.vanishRespawn-=dt;if(t.vanishRespawn<=0){t.vanished=false;t.vanishTimer=0;}}
+      t.bounceOff=Math.sin(performance.now()*.003+r+c)*3.5;
+    }
+  }
+
+  // Projectiles
+  if(GS.projRate>0){
+    lastProjT+=dt;
+    if(lastProjT>1000/GS.projRate){lastProjT=0;spawnProj();}
+    const fp=getFrogXY();
+    projectiles.forEach(p=>{
+      p.x+=p.vx*dt;p.y+=p.vy*dt;p.life-=dt;
+      if(!deathAnim.active){const dx=p.x-fp.x,dy=p.y-fp.y;if(Math.sqrt(dx*dx+dy*dy)<TILE*.32)die('projectile');}
+    });
+    projectiles=projectiles.filter(p=>p.life>0&&p.x>-60&&p.x<canvas.width+60&&p.y>-60&&p.y<canvas.height+60);
+  }
+
+  coinAnims=coinAnims.filter(a=>{a.life-=dt;a.y-=dt*.065;return a.life>0;});
+  bgStars.forEach(s=>{s.tw+=dt*s.v;});
+}
+
+function updateTimerHUD(){
+  document.getElementById('timerDisplay').textContent=Math.ceil(levelTimer);
+  // Timer arc
+  const pct=levelTimer/GS.timeLimit;
+  const W=76;arcCtx.clearRect(0,0,W,W);
+  // BG ring
+  arcCtx.beginPath();arcCtx.arc(W/2,W/2,W/2-5,0,Math.PI*2);
+  arcCtx.strokeStyle='rgba(255,255,255,.1)';arcCtx.lineWidth=5;arcCtx.stroke();
+  // Arc
+  arcCtx.beginPath();arcCtx.arc(W/2,W/2,W/2-5,-Math.PI/2,-Math.PI/2+pct*Math.PI*2);
+  const col=pct<.25?'#ff1744':pct<.5?'#f7931a':'#627eea';
+  arcCtx.strokeStyle=col;arcCtx.lineWidth=5;arcCtx.lineCap='round';
+  arcCtx.shadowColor=col;arcCtx.shadowBlur=8;arcCtx.stroke();
+}
+
+// ═══════════════ MOVEMENT ═══════════════
+function moveFrog(dir){
+  if(!GS||jumpAnim.active||deathAnim.active)return;
+  const{frogR:r,frogC:c,grid,rows,cols}=GS;
+  let nr=r,nc=c;
+  // Wind effect
+  const drift=GS.wind>0?1:GS.wind<0?-1:0;
+  if(dir==='up'||dir==='down')nc=Math.max(0,Math.min(cols-1,nc+drift));
+  if(dir==='up')nr--;else if(dir==='down')nr++;else if(dir==='left')nc--;else if(dir==='right')nc++;
+  if(nr<0||nr>=rows||nc<0||nc>=cols)return;
+  jumpAnim={active:true,progress:0,fromR:r,fromC:c,toR:nr,toC:nc};
+}
+
+function land(){
+  const{toR:nr,toC:nc}=jumpAnim;
+  const tile=GS.grid[nr][nc];
+
+  if(tile.type==='water'||tile.type==='fake'){die(tile.type==='fake'?'fake':'water');return;}
+  if(tile.type==='lava'){die('lava');return;}
+  if(tile.type==='spike'){die('spike');return;}
+  if(tile.vanished){die('water');return;}
+
+  GS.frogR=nr;GS.frogC=nc;
+
+  // Effects on landing
+  if(tile.type==='vanish'&&!tile.vanished){tile.vanished=true;tile.vanishRespawn=4500;toast('💨 Disappearing!');}
+  if(tile.type==='bomb'&&!tile.bombDone){tile.bombDone=true;setTimeout(()=>bombBlast(nr,nc),550);toast('💣 BOMB! JUMP!');}
+  if(tile.type==='ice'){const dr=jumpAnim.toR-jumpAnim.fromR,dc=jumpAnim.toC-jumpAnim.fromC;setTimeout(()=>{if(!deathAnim.active)moveFrog(dr<0?'up':dr>0?'down':dc<0?'left':'right');},190);}
+  if(tile.type==='portal'&&tile.portalPair>=0&&tile.portalPair<GS.portals.length){
+    const d=GS.portals[tile.portalPair];GS.frogR=d.r;GS.frogC=d.c;toast('🌀 Warped!');spawnFx('🌀',6);
+  }
+  if(tile.acid){die('acid');return;}
+
+  // Collect
+  if(tile.gem){
+    tile.gem=false;
+    const val=(80+GS.level*6)*currentCombo;
+    GS.score+=val;GS.coinsCol+=5;PD.totalCoins+=5;
+    PD.totalGems=(PD.totalGems||0)+1;
+    trackCoinInWallet(tile.gemType?.label||'GEM');
+    spawnCoinAnim(nc,nr,'💎 +'+val,tile.gemType.glow);
+    incCombo();spawnFx('💎',8);
+    updateCoinCounter();
+  } else if(tile.coin){
+    tile.coin=false;
+    const baseVal=15+GS.level;
+    const val=baseVal*currentCombo;
+    GS.score+=val;GS.coinsCol++;PD.totalCoins++;
+    trackCoinInWallet(tile.coinType?.label||'BTC');
+    spawnCoinAnim(nc,nr,tile.coinType.label+' +'+val,tile.coinType.glow);
+    incCombo();
+    updateCoinCounter();
+  } else {
+    if(currentCombo>1){currentCombo=Math.max(1,currentCombo-1);document.getElementById('comboDisplay').textContent='x'+currentCombo;}
+  }
+
+  if(tile.type==='goal'){completeLevel();return;}
+}
+
+function incCombo(){
+  currentCombo=Math.min(currentCombo+1,12);
+  if(currentCombo>maxCombo)maxCombo=currentCombo;
+  document.getElementById('comboDisplay').textContent='x'+currentCombo;
+  if(currentCombo>=4){document.getElementById('comboFlash').classList.add('on');setTimeout(()=>document.getElementById('comboFlash').classList.remove('on'),110);toast('🔥 COMBO x'+currentCombo+'!');}
+}
+
+function bombBlast(r,c){
+  if(!GS)return;
+  screenShake();spawnFx('💥',12);
+  for(let dr=-1;dr<=1;dr++)for(let dc=-1;dc<=1;dc++){
+    const nr2=r+dr,nc2=c+dc;
+    if(nr2>=0&&nr2<GS.rows&&nc2>=0&&nc2<GS.cols){
+      const t=GS.grid[nr2][nc2];t.coin=false;t.gem=false;
+      if(t.type==='lily'||t.type==='sinking')t.acid=true;
+    }
+  }
+  if(Math.abs(GS.frogR-r)+Math.abs(GS.frogC-c)<=1&&!deathAnim.active)die('bomb');
+}
+
+// ═══════════════ DEATH & COMPLETE ═══════════════
+function die(cause){
+  if(deathAnim.active)return;
+  deathAnim={active:true,timer:0,cause};
+  GS.lives--;PD.totalDeaths++;currentCombo=1;
+  document.getElementById('comboDisplay').textContent='x1';
+  const titles={water:'💦 SPLASH!',fake:'🕳️ TRAP!',lava:'🌋 MELTED!',spike:'💀 SPIKED!',sinking:'🌊 SUNK!',time:'⏰ TOO SLOW!',projectile:'🗡️ SHOT!',acid:'☠️ DISSOLVED!',bomb:'💣 BLOWN UP!',lightning:'⚡ ZAPPED!'};
+  const emos={water:'💦',fake:'🕳️',lava:'🌋',spike:'💀',sinking:'🌊',time:'⏰',projectile:'💥',acid:'☠️',bomb:'💣',lightning:'⚡'};
+  document.getElementById('dTitle').textContent=titles[cause]||'DEAD!';
+  document.getElementById('dEmoji').textContent=emos[cause]||'💀';
+  screenShake();spawnFx('💥',14);
+  document.getElementById('dangerVig').classList.add('on');
+}
+
+function showDeathScrn(){
+  document.getElementById('dangerVig').classList.remove('on');
+  const tot=currentScore+GS.score;
+  if(tot>PD.bestScore)PD.bestScore=tot;
+  if(maxCombo>PD.maxCombo)PD.maxCombo=maxCombo;
+
+  // Deduct current game score from crypto balance
+  const scoreLostAsCrypto=tot/100000;
+  const oldBalance=PD.cryptoBalance||0;
+  const newBalance=Math.max(0,parseFloat((oldBalance-scoreLostAsCrypto).toFixed(6)));
+  PD.cryptoBalance=newBalance;
+
+  savePD();
+
+  // Update live displays
+  const frogMult=getEquippedMultiplier();
+  document.getElementById('cryptoDisplay').textContent=newBalance.toFixed(4)+'₿';
+  const frogHudD=document.getElementById('frogHudBadge');
+  if(frogHudD){const fdg=FROG_STORE_CHARS[PD.equippedFrog||0]||FROG_STORE_CHARS[0];frogHudD.textContent=fdg.emoji+(frogMult>1?' ×'+frogMult:'');frogHudD.style.color=frogMult>1?'#f7931a':'rgba(255,255,255,.6)';}
+  document.getElementById('statBest').textContent=PD.bestScore.toLocaleString();
+  document.getElementById('statCoins').textContent=newBalance.toFixed(4)+'₿';
+  const dsScore=document.getElementById('ds_score');if(dsScore)dsScore.textContent=PD.bestScore.toLocaleString();
+  const dsCoins=document.getElementById('ds_coins');if(dsCoins)dsCoins.textContent=newBalance.toFixed(4)+'₿';
+  const wTotal=document.getElementById('w_total');if(wTotal)wTotal.textContent=(PD.cryptoEarned||0).toFixed(4)+'₿';
+  const storeBalEl=document.getElementById('storeBalance');if(storeBalEl)storeBalEl.textContent=newBalance.toFixed(4);
+
+  document.getElementById('d_lvl').textContent=GS.level;
+  document.getElementById('d_score').textContent=tot.toLocaleString();
+  document.getElementById('d_best').textContent=PD.bestScore.toLocaleString();
+  document.getElementById('d_combo').textContent='x'+maxCombo;
+  // Show crypto deduction on death screen
+  const cryptoDeductEl=document.getElementById('d_crypto_deduct');
+  if(cryptoDeductEl){
+    cryptoDeductEl.textContent='-'+scoreLostAsCrypto.toFixed(4)+'₿  →  '+newBalance.toFixed(4)+'₿ remaining';
+  }
+  document.getElementById('deathScreen').classList.remove('hidden');
+}
+
+function restartLevel(){
+  document.getElementById('deathScreen').classList.add('hidden');
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  currentScore=0;currentCombo=1;maxCombo=1;
+  initLevel(GS.level);
+}
+
+function updateCoinCounter(){
+  const collected=GS.coinsCol;
+  const total=GS.totalCoins;
+  const el=document.getElementById('coinCounter');
+  if(el){
+    el.textContent=collected+'/'+total;
+    // Turn red if close to goal but missing coins
+    el.style.color=collected>=total?'#00e676':collected>total*0.7?'#f7931a':'#ffd700';
+  }
+}
+
+function failLevel(){
+  // 90% penalty: reduce bestScore by 90%, then derive cryptoBalance from new bestScore
+  timerPaused=true;
+  cancelAnimationFrame(animId);animId=null;
+
+  const oldBest=PD.bestScore;
+  const oldBalance=PD.cryptoBalance||0;
+
+  // New best score = 10% of old
+  const newBest=Math.floor(oldBest*0.1);
+  PD.bestScore=newBest;
+
+  // Crypto balance derived from remaining best score: bestScore / 100000
+  const newBalance=parseFloat((newBest/100000).toFixed(6));
+  PD.cryptoBalance=newBalance;
+  PD.cryptoEarned=Math.max(PD.cryptoEarned||0, newBalance);
+
+  savePD();
+
+  // Update ALL live displays immediately
+  const frogMult=getEquippedMultiplier();
+  document.getElementById('cryptoDisplay').textContent=newBalance.toFixed(4)+'₿'+(frogMult>1?' ×'+frogMult:'');
+  document.getElementById('statBest').textContent=newBest.toLocaleString();
+  // Update dashboard if it was rendered
+  const dsScore=document.getElementById('ds_score');
+  if(dsScore)dsScore.textContent=newBest.toLocaleString();
+  const dsCoins=document.getElementById('ds_coins');
+  if(dsCoins)dsCoins.textContent=newBalance.toFixed(4)+'₿';
+  const wTotal=document.getElementById('w_total');
+  if(wTotal)wTotal.textContent=(PD.cryptoEarned||0).toFixed(4)+'₿';
+  const storeBalEl=document.getElementById('storeBalance');
+  if(storeBalEl)storeBalEl.textContent=newBalance.toFixed(4);
+
+  // Show fail overlay
+  const missed=GS.totalCoins-GS.coinsCol;
+  const fo=document.createElement('div');
+  fo.className='overlay-screen';fo.id='failCoinScreen';
+  fo.innerHTML=`
+    <div class="ov-emoji">💸</div>
+    <div class="ov-title" style="color:#ff1744">COINS MISSED!</div>
+    <p style="color:rgba(255,255,255,.7);text-align:center;font-family:'Orbitron',monospace;font-size:.8rem;margin-bottom:16px;line-height:1.7">
+      You reached the goal but missed<br>
+      <span style="color:#ff1744;font-size:1.4rem;font-weight:900">${missed} COIN${missed!==1?'S':''}</span><br>
+      You must collect ALL coins to pass!
+    </p>
+    <div class="score-card" style="min-width:260px">
+      <div class="sc-row"><span>Coins Collected</span><span style="color:#f7931a">${GS.coinsCol} / ${GS.totalCoins}</span></div>
+      <div class="sc-row"><span>Best Score</span><span style="color:#ff1744">${oldBest.toLocaleString()} → <b>${newBest.toLocaleString()}</b> (-90%)</span></div>
+      <div class="sc-row" style="border:none"><span>Crypto Balance</span><span style="color:#ff1744">${oldBalance.toFixed(4)}₿ → <b>${newBalance.toFixed(4)}₿</b></span></div>
+    </div>
+    <button class="btn btn-primary" style="background:linear-gradient(135deg,#ff1744,#c0000d)" onclick="document.getElementById('failCoinScreen').remove();restartLevel()">🔄 TRY AGAIN</button>
+    <button class="btn btn-secondary" onclick="document.getElementById('failCoinScreen').remove();goMenu()">🏠 Menu</button>`;
+  document.body.appendChild(fo);
+  screenShake();spawnFx('💸',16);
+}
+
+function completeLevel(){
+  timerPaused=true;
+  // Check all coins collected
+  if(GS.coinsCol<GS.totalCoins){failLevel();return;}
+  const lvl=GS.level;
+  const timeBonus=Math.floor(levelTimer*120);
+  const comboBonus=Math.floor(GS.score*(Math.max(0,maxCombo-1)*0.6));
+  const lvlBonus=lvl*100;
+  const total=GS.score+timeBonus+comboBonus+lvlBonus;
+  currentScore+=total;
+  if(currentScore>PD.bestScore)PD.bestScore=currentScore;
+  if(lvl>=PD.maxLevel)PD.maxLevel=Math.min(lvl+1,100);
+  if(maxCombo>PD.maxCombo)PD.maxCombo=maxCombo;
+  // Apply equipped frog score multiplier
+  const frogMult=getEquippedMultiplier();
+  const multipliedTotal=total*frogMult;
+  if(frogMult>1){
+    currentScore+=multipliedTotal-total; // add the extra on top of what was already added
+    if(currentScore>PD.bestScore)PD.bestScore=currentScore;
+  }
+  // Convert score to crypto: 100000 score = 1 crypto (use multiplied total)
+  const newCrypto=multipliedTotal/100000;
+  PD.cryptoEarned=(PD.cryptoEarned||0)+newCrypto;
+  PD.cryptoBalance=(PD.cryptoBalance||0)+newCrypto;
+  document.getElementById('cryptoDisplay').textContent=(PD.cryptoBalance||0).toFixed(4)+'₿';
+  const frogHudAfter=document.getElementById('frogHudBadge');
+  if(frogHudAfter){const fc=FROG_STORE_CHARS[PD.equippedFrog||0]||FROG_STORE_CHARS[0];frogHudAfter.textContent=fc.emoji+(frogMult>1?' ×'+frogMult:'');frogHudAfter.style.color=frogMult>1?'#f7931a':'rgba(255,255,255,.6)';}
+  savePD();
+
+  if(lvl>=100){document.getElementById('win_score').textContent=currentScore.toLocaleString();document.getElementById('winScreen').classList.remove('hidden');spawnFx('🏆',25);return;}
+
+  document.getElementById('lc_coins').textContent=GS.score.toLocaleString();
+  document.getElementById('lc_combo').textContent=comboBonus.toLocaleString();
+  document.getElementById('lc_speed').textContent=timeBonus.toLocaleString();
+  document.getElementById('lc_lvl').textContent=lvlBonus.toLocaleString();
+  document.getElementById('lc_total').textContent=multipliedTotal.toLocaleString()+(frogMult>1?' (×'+frogMult+' BONUS!)':'');
+  document.getElementById('lc_crypto').textContent='+'+newCrypto.toFixed(4)+'₿';
+  document.getElementById('lvlCompleteScreen').classList.remove('hidden');
+  spawnFx('☕',16);
+}
+
+function nextLevel(){
+  document.getElementById('lvlCompleteScreen').classList.add('hidden');
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  initLevel(GS.level+1);
+}
+
+// ═══════════════ PROJECTILES ═══════════════
+function spawnProj(){
+  const side=Math.floor(Math.random()*4);
+  let x,y;const spd=70+GS.level*2;
+  if(side===0){x=Math.random()*canvas.width;y=-20;}
+  else if(side===1){x=canvas.width+20;y=Math.random()*canvas.height;}
+  else if(side===2){x=Math.random()*canvas.width;y=canvas.height+20;}
+  else{x=-20;y=Math.random()*canvas.height;}
+  const fp=getFrogXY();
+  const ang=Math.atan2(fp.y-y,fp.x-x);
+  const aim=.35+Math.random()*.4;
+  const baseVx=(Math.random()-.5)*70;
+  const baseVy=(Math.random()-.5)*70;
+  const sideDir=[0,Math.PI/2,Math.PI,Math.PI*3/2][side];
+  const vx=baseVx*(1-aim)+Math.cos(ang)*spd*aim;
+  const vy=baseVy*(1-aim)+Math.sin(ang)*spd*aim;
+  const types=['🗡️','🔥','⚡','💀','🌑','🪨','☠️'];
+  projectiles.push({x,y,vx,vy,life:4500,emoji:types[Math.floor(Math.random()*types.length)]});
+}
+
+// ═══════════════ RENDERER ═══════════════
+function getFrogXY(){
+  const ox=(canvas.width-GS.cols*TILE)/2,oy=(canvas.height-GS.rows*TILE)/2;
+  if(jumpAnim.active){
+    const t=jumpAnim.progress,ease=t<.5?2*t*t:-1+(4-2*t)*t;
+    const arc=-TILE*(.75+GS.level*.008)*Math.sin(Math.PI*t);
+    const movXF=GS.grid[jumpAnim.fromR][jumpAnim.fromC].moving?GS.grid[jumpAnim.fromR][jumpAnim.fromC].movOffset*TILE*.5:0;
+    const movXT=GS.grid[jumpAnim.toR][jumpAnim.toC].moving?GS.grid[jumpAnim.toR][jumpAnim.toC].movOffset*TILE*.5:0;
+    return{x:ox+jumpAnim.fromC*TILE+TILE/2+movXF+(ox+jumpAnim.toC*TILE+TILE/2+movXT-(ox+jumpAnim.fromC*TILE+TILE/2+movXF))*ease,y:oy+jumpAnim.fromR*TILE+TILE/2+(oy+jumpAnim.toR*TILE+TILE/2-(oy+jumpAnim.fromR*TILE+TILE/2))*ease+arc};
+  }
+  const t=GS.frogR<GS.rows&&GS.frogC<GS.cols?GS.grid[GS.frogR][GS.frogC]:{moving:false,movOffset:0,bounceOff:0};
+  return{x:ox+GS.frogC*TILE+TILE/2+(t.moving?t.movOffset*TILE*.5:0),y:oy+GS.frogR*TILE+TILE/2+t.bounceOff};
+}
+
+function render(){
+  if(!GS)return;
+  const cw=canvas.width,ch=canvas.height;
+  ctx.clearRect(0,0,cw,ch);
+
+  // BG
+  const zone=GS.zone;
+  const bg=ctx.createRadialGradient(cw/2,ch/2,0,cw/2,ch/2,Math.max(cw,ch)*.8);
+  const bgMap={acid:['#010d01','#000800'],lava:['#0f0200','#080100'],ice:['#000a14','#000308'],void:['#04000c','#010005'],storm:['#080800','#030300']};
+  const bgC=bgMap[zone.th]||bgMap.acid;
+  bg.addColorStop(0,bgC[0]);bg.addColorStop(1,bgC[1]);
+  ctx.fillStyle=bg;ctx.fillRect(0,0,cw,ch);
+
+  // Nebula
+  bgNebula.forEach(n=>{
+    const nebCols={acid:'rgba(0,80,0,.06)',lava:'rgba(100,20,0,.07)',ice:'rgba(0,40,80,.07)',void:'rgba(40,0,80,.07)',storm:'rgba(60,60,0,.07)'};
+    const g=ctx.createRadialGradient(n.x*cw,n.y*ch,0,n.x*cw,n.y*ch,n.r);
+    g.addColorStop(0,nebCols[zone.th]||nebCols.acid);g.addColorStop(1,'rgba(0,0,0,0)');
+    ctx.fillStyle=g;ctx.fillRect(0,0,cw,ch);
+  });
+
+  // Stars
+  bgStars.forEach(s=>{
+    const a=(Math.sin(s.tw)+1)/2*s.a;
+    ctx.beginPath();ctx.arc(s.x*cw,s.y*ch,s.r,0,Math.PI*2);
+    ctx.fillStyle=`rgba(255,255,255,${a})`;ctx.fill();
+  });
+
+  const ox=(cw-GS.cols*TILE)/2,oy=(ch-GS.rows*TILE)/2;
+
+  // Wind arrows
+  if(Math.abs(GS.wind)>.01){
+    ctx.save();ctx.globalAlpha=.3;ctx.font=(TILE*.3)+'px serif';ctx.textAlign='center';
+    for(let i=0;i<Math.ceil(cw/80);i++)ctx.fillText(GS.wind>0?'→':'←',60+i*80,oy-12);
+    ctx.restore();
+  }
+
+  // Grid tiles
+  for(let r=0;r<GS.rows;r++){
+    for(let c=0;c<GS.cols;c++){
+      const tile=GS.grid[r][c];
+      if(tile.vanished)continue;
+      const mx=tile.moving?tile.movOffset*TILE*.5:0;
+      const sy=tile.type==='sinking'&&tile.sinkTimer?(tile.sinkTimer/tile.sinkMax)*TILE*.45:0;
+      drawTile(ctx,tile,ox+c*TILE+mx,oy+r*TILE+sy,TILE,zone,r,c);
+    }
+  }
+
+  // Coin anims
+  coinAnims.forEach(a=>{
+    ctx.save();ctx.globalAlpha=a.life/a.maxLife;
+    ctx.font=`bold ${TILE*.28}px Orbitron,monospace`;
+    ctx.fillStyle=a.color||'#f7931a';ctx.textAlign='center';
+    ctx.shadowColor=a.color||'#f7931a';ctx.shadowBlur=10;
+    ctx.fillText(a.text,a.x,a.y);ctx.restore();
+  });
+
+  // Projectiles
+  projectiles.forEach(p=>{
+    ctx.save();ctx.font=(TILE*.38)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';
+    ctx.shadowColor='rgba(255,80,0,.8)';ctx.shadowBlur=14;
+    ctx.fillText(p.emoji,p.x,p.y);ctx.restore();
+  });
+
+  // Frog
+  if(!deathAnim.active){
+    const fp=getFrogXY();drawFrog(fp.x,fp.y,TILE,zone,currentCombo);
+  } else {
+    const prog=Math.min(deathAnim.timer/600,1);
+    const fp={x:ox+GS.frogC*TILE+TILE/2,y:oy+GS.frogR*TILE+TILE/2};
+    ctx.save();ctx.globalAlpha=1-prog;ctx.translate(fp.x,fp.y);ctx.rotate(prog*Math.PI*3);ctx.scale(1-prog*.9,1-prog*.9);
+    drawFrogInner(ctx,0,0,TILE,zone,currentCombo);ctx.restore();
+  }
+
+  // Sinking warning ring
+  if(!jumpAnim.active&&GS.frogR<GS.rows&&GS.frogC<GS.cols){
+    const ft=GS.grid[GS.frogR][GS.frogC];
+    if(ft.type==='sinking'&&ft.sinkTimer>0){
+      const prog=ft.sinkTimer/ft.sinkMax;
+      const fp2=getFrogXY();
+      ctx.save();
+      ctx.strokeStyle=`rgba(255,${Math.floor(200*(1-prog))},0,${.6+prog*.3})`;
+      ctx.lineWidth=2.5;ctx.setLineDash([4,4]);
+      ctx.beginPath();ctx.arc(fp2.x,fp2.y,TILE*.6,0,Math.PI*2);ctx.stroke();
+      ctx.setLineDash([]);ctx.restore();
+    }
+  }
+}
+
+// ═══════════════ TILE DRAWING ═══════════════
+function drawTile(ctx,tile,x,y,S,zone,r,c){
+  const p=2.5,rx=x+p,ry=y+p,rw=S-p*2,rh=S-p*2,rd=7;
+
+  // WATER / EMPTY
+  if(tile.type==='water'){
+    const wg=ctx.createLinearGradient(rx,ry,rx,ry+rh);
+    const wm={acid:['#021002','#010801'],lava:['#2a0400','#150200'],ice:['#000c1a','#000510'],void:['#080015','#040008'],storm:['#0a0a00','#050500']};
+    const wc=wm[zone.th]||wm.acid;wg.addColorStop(0,wc[0]);wg.addColorStop(1,wc[1]);
+    RR(ctx,rx,ry,rw,rh,rd);ctx.fillStyle=wg;ctx.fill();
+    // Ripple shimmer
+    const t2=performance.now()*.001;
+    ctx.strokeStyle=`rgba(255,255,255,${.06+Math.sin(t2*1.5+x*.01+y*.01)*.04})`;
+    ctx.lineWidth=1;RR(ctx,rx,ry,rw,rh,rd);ctx.stroke();
+    return;
+  }
+
+  ctx.save();ctx.shadowColor='rgba(0,0,0,.6)';ctx.shadowBlur=7;ctx.shadowOffsetY=3;
+  RR(ctx,rx,ry,rw,rh,rd);
+
+  const now=performance.now()*.001;
+
+  if(tile.type==='goal'){
+    // Golden goal tile — pulsing glow
+    const gg=ctx.createRadialGradient(rx+rw/2,ry+rh/2,0,rx+rw/2,ry+rh/2,rw*.7);
+    gg.addColorStop(0,'#fff9c4');gg.addColorStop(.35,'#ffd700');gg.addColorStop(1,'#e65100');
+    ctx.fillStyle=gg;ctx.fill();
+    ctx.shadowColor='#ffd700';ctx.shadowBlur=20+Math.sin(now*3)*8;
+    RR(ctx,rx,ry,rw,rh,rd);ctx.strokeStyle='rgba(255,215,0,.85)';ctx.lineWidth=2.5;ctx.stroke();
+    ctx.font=(S*.55)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('☕',rx+rw/2,ry+rh/2+1);
+  } else if(tile.type==='fake'){
+    // FAKE TILE: looks exactly like lily but slightly different shade — very deceptive
+    const themeF={acid:['#2a6a2a','#1a4a1a'],lava:['#2d1500','#1a0c00'],ice:['#1a3040','#0d1f2c'],void:['#180028','#0e0018'],storm:['#282800','#181800']};
+    const fc2=themeF[zone.th]||themeF.acid;
+    const fg=ctx.createLinearGradient(rx,ry,rx,ry+rh);fg.addColorStop(0,fc2[0]);fg.addColorStop(1,fc2[1]);
+    ctx.fillStyle=fg;ctx.fill();
+    ctx.strokeStyle='rgba(255,255,255,.08)';ctx.lineWidth=1;RR(ctx,rx,ry,rw,rh,rd);ctx.stroke();
+    // Subtle skull hint only at very close range
+    if(tile.fakeReveal){ctx.font=(S*.3)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.globalAlpha=.3;ctx.fillText('💀',rx+rw/2,ry+rh/2);ctx.globalAlpha=1;}
+  } else if(tile.type==='lava'){
+    const lg=ctx.createLinearGradient(rx,ry,rx,ry+rh);lg.addColorStop(0,'#ff6b00');lg.addColorStop(.5,'#ff1a00');lg.addColorStop(1,'#8b0000');ctx.fillStyle=lg;ctx.fill();
+    ctx.fillStyle=`rgba(255,140,0,${.35+Math.sin(now*5+x*.08)*.2})`;RR(ctx,rx+2,ry+2,rw-4,(rh-4)*.55,4);ctx.fill();
+    ctx.font=(S*.3)+'px serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('🔥',rx+rw/2,ry+3);
+  } else if(tile.type==='spike'){
+    ctx.fillStyle='#100005';ctx.fill();
+    ctx.fillStyle='#cc0000';
+    for(let i=0;i<4;i++){ctx.beginPath();ctx.moveTo(rx+i*(rw/4)+rw/8,ry+rh-3);ctx.lineTo(rx+i*(rw/4)+2,ry+4);ctx.lineTo(rx+i*(rw/4)+rw/4-2,ry+4);ctx.closePath();ctx.fill();}
+    // Red glow
+    ctx.shadowColor='#ff0000';ctx.shadowBlur=10;
+  } else if(tile.type==='ice'){
+    const ig=ctx.createLinearGradient(rx,ry,rx+rw,ry+rh);ig.addColorStop(0,'#b3e5fc');ig.addColorStop(.5,'#29b6f6');ig.addColorStop(1,'#0277bd');ctx.fillStyle=ig;ctx.fill();
+    ctx.fillStyle='rgba(255,255,255,.5)';RR(ctx,rx+3,ry+3,rw-6,(rh-6)/3.5,4);ctx.fill();
+    ctx.font=(S*.38)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('❄️',rx+rw/2,ry+rh/2);
+  } else if(tile.type==='sinking'){
+    const prog=tile.sinkTimer/tile.sinkMax;
+    const sg=ctx.createLinearGradient(rx,ry,rx,ry+rh);
+    sg.addColorStop(0,`rgb(${Math.floor(70+prog*110)},${Math.floor(55-prog*35)},15)`);sg.addColorStop(1,'#3d2010');
+    ctx.fillStyle=sg;ctx.fill();
+    if(prog>.25){ctx.fillStyle=`rgba(0,80,180,${prog*.55})`;RR(ctx,rx,ry+rh*(1-prog*.55),rw,rh*prog*.55,rd);ctx.fill();}
+    // Crack lines
+    ctx.strokeStyle=`rgba(255,60,0,${prog*.6})`;ctx.lineWidth=1.5;
+    ctx.beginPath();ctx.moveTo(rx+rw/2,ry+2);ctx.lineTo(rx+rw*.3,ry+rh*.6);ctx.lineTo(rx+rw*.7,ry+rh*.8);ctx.stroke();
+  } else if(tile.type==='vanish'){
+    ctx.globalAlpha=tile.vanished?.2:.85;
+    const vg=ctx.createLinearGradient(rx,ry,rx,ry+rh);vg.addColorStop(0,'#7c3aed');vg.addColorStop(1,'#4c1d95');ctx.fillStyle=vg;ctx.fill();
+    ctx.globalAlpha=1;
+    ctx.font=(S*.3)+'px serif';ctx.textAlign='center';ctx.textBaseline='top';ctx.fillText('👁',rx+rw/2,ry+3);
+  } else if(tile.type==='bomb'){
+    const bg2=ctx.createLinearGradient(rx,ry,rx,ry+rh);bg2.addColorStop(0,'#374151');bg2.addColorStop(1,'#111827');ctx.fillStyle=bg2;ctx.fill();
+    ctx.font=(S*.5)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('💣',rx+rw/2,ry+rh/2);
+  } else if(tile.type==='portal'){
+    const pg=ctx.createRadialGradient(rx+rw/2,ry+rh/2,0,rx+rw/2,ry+rh/2,rw*.55);pg.addColorStop(0,'#e040fb');pg.addColorStop(.5,'#7b1fa2');pg.addColorStop(1,'#12002e');ctx.fillStyle=pg;ctx.fill();
+    ctx.strokeStyle=`rgba(224,64,251,${.5+Math.sin(now*5+r+c)*.35})`;ctx.lineWidth=2;RR(ctx,rx,ry,rw,rh,rd);ctx.stroke();
+    ctx.font=(S*.45)+'px serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText('🌀',rx+rw/2,ry+rh/2);
+  } else {
+    // LILY / START — themed
+    const themeT={acid:['#1a4d1a','#0d2e0d'],lava:['#3a1800','#200e00'],ice:['#1a3040','#0d1f2c'],void:['#18002e','#0e0018'],storm:['#252500','#161600']};
+    const tc2=themeT[zone.th]||themeT.acid;
+    const lg2=ctx.createLinearGradient(rx,ry,rx,ry+rh);
+    lg2.addColorStop(0,tile.type==='start'?'#1f5e1f':tc2[0]);lg2.addColorStop(1,tile.type==='start'?'#0e3a0e':tc2[1]);
+    ctx.fillStyle=lg2;ctx.fill();
+    // Subtle vein
+    ctx.strokeStyle='rgba(255,255,255,.1)';ctx.lineWidth=1;RR(ctx,rx,ry,rw,rh,rd);ctx.stroke();
+    ctx.beginPath();ctx.moveTo(rx+rw/2,ry+4);ctx.lineTo(rx+rw/2,ry+rh-4);ctx.strokeStyle='rgba(255,255,255,.07)';ctx.stroke();
+    if(tile.acid){ctx.fillStyle='rgba(57,255,20,.45)';RR(ctx,rx,ry,rw,rh,rd);ctx.fill();}
+    if(tile.moving){ctx.fillStyle='rgba(255,255,255,.28)';ctx.font=(S*.18)+'px sans-serif';ctx.textAlign='right';ctx.textBaseline='top';ctx.fillText('↔',rx+rw-2,ry+2);}
+    if(tile.type==='start'){
+      ctx.font=(S*.22)+'px Orbitron,monospace';ctx.fillStyle='rgba(0,255,100,.5)';ctx.textAlign='center';ctx.textBaseline='bottom';ctx.fillText('START',rx+rw/2,ry+rh-2);
+    }
+  }
+
+  ctx.restore();
+
+  // ── CRYPTO COIN (drawn on canvas, not emoji) ──
+  if(tile.coin&&!tile.vanished&&tile.coinType){
+    drawCryptoCoin(ctx,rx+rw/2,ry+rh*.28+Math.sin(now*3+x*.04+y*.04)*2.5,S*.28,tile.coinType);
+  }
+  if(tile.gem&&!tile.vanished&&tile.gemType){
+    drawGem(ctx,rx+rw/2,ry+rh*.28+Math.sin(now*4+x*.05)*2.8,S*.3,tile.gemType);
+  }
+}
+
+// ═══════════════ CRYPTO COIN RENDERER ═══════════════
+function drawCryptoCoin(ctx,cx,cy,r,ct){
+  const now=performance.now()*.001;
+  ctx.save();
+  // Spin effect: squish horizontally to simulate rotation
+  const spin=Math.abs(Math.cos(now*1.8+cx*.05+cy*.03));
+  ctx.translate(cx,cy);
+  ctx.scale(spin<.15?.15:spin,1);
+
+  // Outer glow
+  ctx.shadowColor=ct.glow;ctx.shadowBlur=14;
+
+  // Ring
+  ctx.beginPath();ctx.arc(0,0,r,0,Math.PI*2);
+  ctx.strokeStyle=ct.ring;ctx.lineWidth=r*.18;ctx.stroke();
+
+  // Body gradient
+  const cg=ctx.createRadialGradient(-r*.25,-r*.25,0,0,0,r);
+  cg.addColorStop(0,'rgba(255,255,255,.45)');cg.addColorStop(.4,ct.inner);cg.addColorStop(1,ct.outer);
+  ctx.beginPath();ctx.arc(0,0,r*.82,0,Math.PI*2);ctx.fillStyle=cg;ctx.fill();
+
+  // Shine spot
+  ctx.beginPath();ctx.ellipse(-r*.18,-r*.22,r*.28,r*.18,-Math.PI/4,0,Math.PI*2);
+  ctx.fillStyle='rgba(255,255,255,.35)';ctx.fill();
+
+  // Symbol
+  ctx.shadowBlur=0;
+  ctx.font=`bold ${r*1.05}px Orbitron,monospace`;
+  ctx.fillStyle='rgba(255,255,255,.92)';ctx.textAlign='center';ctx.textBaseline='middle';
+  ctx.fillText(ct.sym,0,1);
+
+  ctx.restore();
+}
+
+// ═══════════════ GEM RENDERER ═══════════════
+function drawGem(ctx,cx,cy,r,gt){
+  const now=performance.now()*.001;
+  ctx.save();ctx.translate(cx,cy);
+  ctx.shadowColor=gt.glow;ctx.shadowBlur=20+Math.sin(now*3)*8;
+  // Diamond shape
+  ctx.beginPath();ctx.moveTo(0,-r);ctx.lineTo(r*.7,0);ctx.lineTo(0,r);ctx.lineTo(-r*.7,0);ctx.closePath();
+  const gg2=ctx.createLinearGradient(-r,-r,r,r);gg2.addColorStop(0,'#e0f7ff');gg2.addColorStop(.4,'#80deea');gg2.addColorStop(1,'#006064');
+  ctx.fillStyle=gg2;ctx.fill();
+  ctx.strokeStyle='rgba(255,255,255,.7)';ctx.lineWidth=1.5;ctx.stroke();
+  ctx.fillStyle='rgba(255,255,255,.5)';ctx.beginPath();ctx.moveTo(0,-r);ctx.lineTo(r*.35,-r*.1);ctx.lineTo(0,0);ctx.closePath();ctx.fill();
+  ctx.restore();
+}
+
+// ═══════════════ FROG DRAWING ═══════════════
+function drawFrog(x,y,S,zone,combo){ctx.save();ctx.translate(x,y);drawFrogInner(ctx,0,0,S,zone,combo);ctx.restore();}
+function drawFrogInner(ctx,x,y,S,zone,combo){
+  const s=S*.38,isJ=jumpAnim.active;
+  const zoneCols={acid:['#5cd65c','#3d9e3d','#1e5c1e'],lava:['#ffab40','#f57c00','#bf360c'],ice:['#80d8ff','#00b0ff','#006090'],void:['#e040fb','#9c27b0','#4a0072'],storm:['#fff176','#f9a825','#a07800']};
+  const fc=zoneCols[zone?.th]||zoneCols.acid;
+
+  ctx.save();
+  ctx.shadowColor='rgba(0,0,0,.7)';ctx.shadowBlur=14;ctx.shadowOffsetY=5;
+
+  // Body
+  const bg=ctx.createRadialGradient(x-s*.12,y-s*.12,0,x,y,s);
+  bg.addColorStop(0,fc[0]);bg.addColorStop(.6,fc[1]);bg.addColorStop(1,fc[2]);
+  ctx.beginPath();ctx.ellipse(x,y,s,s*(isJ?.65:.85),0,0,Math.PI*2);ctx.fillStyle=bg;ctx.fill();
+
+  // Belly
+  ctx.beginPath();ctx.ellipse(x,y+s*.08,s*.52,s*(isJ?.42:.55),0,0,Math.PI*2);ctx.fillStyle='rgba(255,255,255,.2)';ctx.fill();
+
+  // Combo glow aura
+  if(combo>=5){
+    ctx.save();ctx.shadowColor=fc[0];ctx.shadowBlur=20+(combo-5)*5;
+    ctx.beginPath();ctx.arc(x,y,s*1.25,0,Math.PI*2);ctx.strokeStyle=`rgba(255,255,255,${.08+(combo-5)*.03})`;ctx.lineWidth=3;ctx.stroke();ctx.restore();
+  }
+
+  // Eyes
+  const eo=s*.48,ey=y-s*.36;
+  [x-eo*.5,x+eo*.5].forEach(ex=>{
+    ctx.beginPath();ctx.arc(ex,ey,s*.27,0,Math.PI*2);ctx.fillStyle='#fff';ctx.shadowBlur=0;ctx.fill();
+    ctx.beginPath();ctx.arc(ex+1,ey+1,s*.13,0,Math.PI*2);ctx.fillStyle='#080818';ctx.fill();
+    ctx.beginPath();ctx.arc(ex-2,ey-2,s*.055,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
+  });
+
+  // Crypto symbol or equipped frog on chest
+  const equippedId=PD.equippedFrog||0;
+  const equippedChar=FROG_STORE_CHARS&&FROG_STORE_CHARS[equippedId]?FROG_STORE_CHARS[equippedId].emoji:'₿';
+  ctx.font=`bold ${s*.55}px Orbitron,monospace`;ctx.fillStyle='rgba(255,255,255,.2)';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(equippedChar,x,y+s*.05);
+
+  // Mouth
+  ctx.beginPath();
+  if(isJ)ctx.arc(x,y+s*.07,s*.3,.05,Math.PI-.05);
+  else ctx.arc(x,y+s*.1,s*.24,.15,Math.PI-.15);
+  ctx.strokeStyle=fc[2];ctx.lineWidth=2;ctx.stroke();
+
+  // Jumping legs
+  if(isJ){
+    ctx.strokeStyle=fc[1];ctx.lineWidth=3.5;ctx.lineCap='round';
+    ctx.beginPath();
+    ctx.moveTo(x-s*.5,y+s*.22);ctx.lineTo(x-s*1.1,y+s*.82);
+    ctx.moveTo(x+s*.5,y+s*.22);ctx.lineTo(x+s*1.1,y+s*.82);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+function RR(ctx,x,y,w,h,r){ctx.beginPath();ctx.moveTo(x+r,y);ctx.lineTo(x+w-r,y);ctx.quadraticCurveTo(x+w,y,x+w,y+r);ctx.lineTo(x+w,y+h-r);ctx.quadraticCurveTo(x+w,y+h,x+w-r,y+h);ctx.lineTo(x+r,y+h);ctx.quadraticCurveTo(x,y+h,x,y+h-r);ctx.lineTo(x,y+r);ctx.quadraticCurveTo(x,y,x+r,y);ctx.closePath();}
+
+// ═══════════════ FX ═══════════════
+function spawnCoinAnim(c,r,text,color){
+  const ox=(canvas.width-GS.cols*TILE)/2,oy=(canvas.height-GS.rows*TILE)/2;
+  coinAnims.push({x:ox+c*TILE+TILE/2,y:oy+r*TILE,text,color:color||'#f7931a',life:950,maxLife:950});
+}
+function screenShake(){if(screenshaking)return;screenshaking=true;document.getElementById('gameScreen').classList.add('shake');setTimeout(()=>{document.getElementById('gameScreen').classList.remove('shake');screenshaking=false;},280);}
+function spawnFx(emoji,count){for(let i=0;i<count;i++){const el=document.createElement('div');el.className='particle';el.textContent=emoji;el.style.left=(20+Math.random()*60)+'vw';el.style.top=(20+Math.random()*60)+'vh';const tx=(Math.random()-.5)*220,ty=-(60+Math.random()*160);el.style.setProperty('--tx',tx+'px');el.style.setProperty('--ty',ty+'px');el.style.animationDelay=(Math.random()*400)+'ms';document.body.appendChild(el);setTimeout(()=>el.remove(),1500);}}
+let toastTimer=null;
+function toast(msg){const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>t.classList.remove('show'),1400);}
+
+// ═══════════════ INPUT ═══════════════
+function kd(dir){if(inputQ.length<2)inputQ.push(dir);}
+function ku(dir){}
+function evt(e,dir,down){e.preventDefault();if(down)kd(dir);}
+document.addEventListener('keydown',e=>{const m={ArrowUp:'up',ArrowDown:'down',ArrowLeft:'left',ArrowRight:'right',w:'up',s:'down',a:'left',d:'right'};if(m[e.key]){e.preventDefault();kd(m[e.key]);}});
+let tStart=null;
+canvas.addEventListener('touchstart',e=>{tStart={x:e.touches[0].clientX,y:e.touches[0].clientY};},{passive:true});
+canvas.addEventListener('touchend',e=>{if(!tStart)return;const dx=e.changedTouches[0].clientX-tStart.x,dy=e.changedTouches[0].clientY-tStart.y;if(Math.max(Math.abs(dx),Math.abs(dy))<18)return;kd(Math.abs(dx)>Math.abs(dy)?(dx>0?'right':'left'):(dy>0?'down':'up'));tStart=null;},{passive:true});
+
+// ═══════════════ PAUSE ═══════════════
+function pauseGame(){
+  cancelAnimationFrame(animId);animId=null;timerPaused=true;
+  const p=document.createElement('div');p.className='overlay-screen';p.id='pauseOv';
+  p.innerHTML=`<div class="ov-emoji">⏸</div><div class="ov-title" style="color:#fff">PAUSED</div>
+    <div style="color:rgba(255,255,255,.5);font-size:.85rem;margin-bottom:20px;font-family:'Orbitron',monospace;">⏱ ${GS.timeLimit.toFixed(1)}s TIME LIMIT</div>
+    <button class="btn btn-primary" onclick="resumeGame()">▶ Resume</button>
+    <button class="btn btn-secondary" onclick="goMenu()">🏠 Menu</button>`;
+  document.body.appendChild(p);
+}
+function resumeGame(){
+  document.getElementById('pauseOv')?.remove();
+  timerPaused=false;
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  lastT=performance.now();
+  animId=requestAnimationFrame(loop);
+}
+function goMenu(){
+  document.getElementById('pauseOv')?.remove();
+  ['lvlCompleteScreen','deathScreen','winScreen'].forEach(id=>document.getElementById(id).classList.add('hidden'));
+  if(animId){cancelAnimationFrame(animId);animId=null;}
+  GS=null;
+  showScreen('startScreen');
+  updateStart();
+}
+
+// ═══════════════ SCREENS ═══════════════
+let _adminTaps=0,_adminTapTimer=null;
+function adminTapCount(){
+  _adminTaps++;
+  clearTimeout(_adminTapTimer);
+  if(_adminTaps>=5){_adminTaps=0;openAdminLogin();return;}
+  _adminTapTimer=setTimeout(()=>{_adminTaps=0;},2000);
+}
+
+function showScreen(id){
+  document.querySelectorAll('.screen,.overlay-screen').forEach(s=>s.classList.add('hidden'));
+  if(id==='startScreen'||id==='leaderboardScreen'||id==='authScreen'||id==='dashboardScreen'||id==='adminLoginScreen'||id==='adminScreen'){
+    if(animId){cancelAnimationFrame(animId);animId=null;}
+  }
+  document.getElementById(id)?.classList.remove('hidden');
+  if(id==='startScreen'){
+    document.getElementById('dangerVig').classList.remove('on');
+    document.getElementById('timerDisplay').className='';
+    GS=null;
+  }
+}
+
+// ═══════════════ LEADERBOARD ═══════════════
+async function showLeaderboard(){
+  showScreen('leaderboardScreen');
+  const all=await dbA('lb');all.sort((a,b)=>b.score-a.score);
+  const list=document.getElementById('lbList');list.innerHTML='';
+  const demos=[{id:'d1',name:'SatoshiHopper',score:185000,level:97,combo:12},{id:'d2',name:'ETH_King',score:132000,level:78,combo:10},{id:'d3',name:'CryptoFrog99',score:98000,level:62,combo:9},{id:'d4',name:'BlockchainBob',score:71000,level:48,combo:7}];
+  const entries=all.length?all:[...demos,{id:playerId,name:playerName,score:PD.bestScore,level:PD.maxLevel,combo:PD.maxCombo}];
+  entries.sort((a,b)=>b.score-a.score).forEach((p,i)=>{
+    const rk=i===0?'gold':i===1?'silver':i===2?'bronze':'';const m=['🥇','🥈','🥉'];
+    const d=document.createElement('div');d.className='lb-item'+(p.id===playerId?' me':'');
+    d.innerHTML=`<div class="lb-rank ${rk}">${i<3?m[i]:i+1}</div><div class="lb-name">${p.name}${p.id===playerId?' (You)':''}</div><div><div class="lb-score">${(p.score||0).toLocaleString()}</div><div class="lb-lvl">Lv.${p.level||1} · x${p.combo||1}</div></div>`;
+    list.appendChild(d);
+  });
+}
+
+// ═══════════════════════════════════════════════════
+//  AUTH SYSTEM
+//  All accounts stored in IndexedDB 'accounts' store
+//  Session stored in localStorage for persistence
+// ═══════════════════════════════════════════════════
+
+// DB upgrade to add accounts store
+function openDBWithAuth(){
+  return new Promise(r=>{
+    const req=indexedDB.open('FrogCryptoDB',2); // bump version to trigger upgrade
+    req.onupgradeneeded=e=>{
+      const d=e.target.result;
+      if(!d.objectStoreNames.contains('players'))d.createObjectStore('players',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('lb'))d.createObjectStore('lb',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('accounts')){
+        const acc=d.createObjectStore('accounts',{keyPath:'id'});
+        acc.createIndex('email','email',{unique:false});
+        acc.createIndex('phone','phone',{unique:false});
+      }
+    };
+    req.onsuccess=e=>{db=e.target.result;r(db);};
+    req.onerror=()=>r(null);
+  });
+}
+
+// Simple hash (not cryptographic - for demo purposes)
+function hashPass(str){
+  let h=0;for(let i=0;i<str.length;i++){h=((h<<5)-h)+str.charCodeAt(i);h|=0;}
+  return Math.abs(h).toString(36)+'_'+str.length;
+}
+
+function genId(){return 'usr_'+Date.now().toString(36)+Math.random().toString(36).substr(2,6);}
+
+// Save account to DB
+async function saveAccount(acc){
+  if(!db){localStorage.setItem('acc_'+acc.id,JSON.stringify(acc));return;}
+  return new Promise(res=>{
+    const tx=db.transaction('accounts','readwrite');
+    tx.objectStore('accounts').put(acc);
+    tx.oncomplete=res;tx.onerror=res;
+  });
+}
+
+// Find account by email or phone
+async function findAccount(identifier){
+  if(!db){
+    const keys=Object.keys(localStorage).filter(k=>k.startsWith('acc_'));
+    for(const k of keys){
+      try{const a=JSON.parse(localStorage.getItem(k));if(a&&(a.email===identifier||a.phone===identifier))return a;}catch{}
+    }
+    return null;
+  }
+  return new Promise(res=>{
+    const tx=db.transaction('accounts','readonly');
+    const store=tx.objectStore('accounts');
+    const req=store.getAll();
+    req.onsuccess=()=>{
+      const found=(req.result||[]).find(a=>a.email===identifier||a.phone===identifier);
+      res(found||null);
+    };
+    req.onerror=()=>res(null);
+  });
+}
+
+// Get account by ID
+async function getAccount(id){
+  if(!db){try{return JSON.parse(localStorage.getItem('acc_'+id));}catch{return null;}}
+  return new Promise(res=>{
+    const tx=db.transaction('accounts','readonly');
+    const req=tx.objectStore('accounts').get(id);
+    req.onsuccess=()=>res(req.result||null);
+    req.onerror=()=>res(null);
+  });
+}
+
+// Session management
+function saveSession(accId){localStorage.setItem('fhc_session',accId);}
+function getSession(){return localStorage.getItem('fhc_session');}
+function clearSession(){localStorage.removeItem('fhc_session');}
+
+// Current logged-in account
+let currentAccount=null;
+
+// ── AUTH STATE: switch between login/signup tabs ──
+let loginMethod='email', signupMethod='email';
+let selectedAvatar='🐸';
+
+function switchAuthTab(tab){
+  document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+  document.querySelectorAll('.auth-section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  document.getElementById('section'+tab.charAt(0).toUpperCase()+tab.slice(1)).classList.add('active');
+  clearAuthMessages();
+}
+
+function setLoginMethod(m){
+  loginMethod=m;
+  document.getElementById('loginMethodEmail').classList.toggle('active',m==='email');
+  document.getElementById('loginMethodPhone').classList.toggle('active',m==='phone');
+  document.getElementById('loginEmailGroup').style.display=m==='email'?'':'none';
+  document.getElementById('loginPhoneGroup').style.display=m==='phone'?'':'none';
+}
+function setSignupMethod(m){
+  signupMethod=m;
+  document.getElementById('signupMethodEmail').classList.toggle('active',m==='email');
+  document.getElementById('signupMethodPhone').classList.toggle('active',m==='phone');
+  document.getElementById('signupEmailGroup').style.display=m==='email'?'':'none';
+  document.getElementById('signupPhoneGroup').style.display=m==='phone'?'':'none';
+}
+
+function selectAvatar(el,emoji){
+  document.querySelectorAll('.avatar-opt').forEach(a=>a.classList.remove('selected'));
+  el.classList.add('selected');selectedAvatar=emoji;
+}
+
+function togglePass(inputId,btn){
+  const inp=document.getElementById(inputId);
+  if(inp.type==='password'){inp.type='text';btn.textContent='🙈';}
+  else{inp.type='password';btn.textContent='👁';}
+}
+
+function clearAuthMessages(){
+  ['loginErr','loginOk','signupErr','signupOk'].forEach(id=>{
+    const el=document.getElementById(id);if(el){el.classList.remove('show');el.textContent='';}
+  });
+}
+
+function showAuthMsg(id,msg,isOk=false){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.textContent=msg;el.classList.add('show');
+}
+
+function validateEmail(e){return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);}
+function validatePhone(p){return /^[+\d\s\-()]{7,15}$/.test(p.trim());}
+
+// ── SIGN UP ──
+async function doSignup(){
+  clearAuthMessages();
+  const name=document.getElementById('signupName').value.trim();
+  const pass=document.getElementById('signupPass').value;
+  const pass2=document.getElementById('signupPass2').value;
+  const identifier=signupMethod==='email'
+    ? document.getElementById('signupEmail').value.trim().toLowerCase()
+    : document.getElementById('signupPhone').value.trim();
+
+  if(!name||name.length<2){showAuthMsg('signupErr','⚠️ Enter a display name (min 2 chars)');return;}
+  if(signupMethod==='email'&&!validateEmail(identifier)){showAuthMsg('signupErr','⚠️ Enter a valid email address');return;}
+  if(signupMethod==='phone'&&!validatePhone(identifier)){showAuthMsg('signupErr','⚠️ Enter a valid phone number');return;}
+  if(pass.length<6){showAuthMsg('signupErr','⚠️ Password must be at least 6 characters');return;}
+  if(pass!==pass2){showAuthMsg('signupErr','⚠️ Passwords do not match');return;}
+
+  // Check duplicate
+  const exists=await findAccount(identifier);
+  if(exists){showAuthMsg('signupErr','⚠️ Account already exists. Try logging in.');return;}
+
+  // Loading state
+  const btn=document.getElementById('signupBtn');btn.classList.add('btn-loading');btn.textContent='Creating...';
+
+  const acc={
+    id:genId(),
+    name,
+    email:signupMethod==='email'?identifier:'',
+    phone:signupMethod==='phone'?identifier:'',
+    passHash:hashPass(pass),
+    avatar:selectedAvatar,
+    createdAt:Date.now(),
+    // Game stats embedded in account
+    bestScore:0,maxLevel:1,totalCoins:0,totalDeaths:0,maxCombo:1,
+    gamesPlayed:0,totalGems:0,
+    wallet:{btc:0,eth:0,sol:0,bnb:0,gems:0},
+  };
+
+  await saveAccount(acc);
+  saveSession(acc.id);
+  currentAccount=acc;
+
+  btn.classList.remove('btn-loading');btn.textContent='🚀 CREATE ACCOUNT';
+  showAuthMsg('signupOk','✅ Account created! Welcome, '+name+'!',true);
+
+  setTimeout(()=>{loadAccountIntoPD(acc);showScreen('dashboardScreen');renderDashboard();},1000);
+}
+
+// ── LOG IN ──
+async function doLogin(){
+  clearAuthMessages();
+  const pass=document.getElementById('loginPass').value;
+  const identifier=loginMethod==='email'
+    ? document.getElementById('loginEmail').value.trim().toLowerCase()
+    : document.getElementById('loginPhone').value.trim();
+
+  if(!identifier){showAuthMsg('loginErr','⚠️ Enter your email or phone number');return;}
+  if(!pass){showAuthMsg('loginErr','⚠️ Enter your password');return;}
+
+  const btn=document.getElementById('loginBtn');btn.classList.add('btn-loading');btn.textContent='Logging in...';
+
+  const acc=await findAccount(identifier);
+  btn.classList.remove('btn-loading');btn.textContent='▶ LOGIN';
+
+  if(!acc){showAuthMsg('loginErr','❌ Account not found. Sign up first!');return;}
+  if(acc.passHash!==hashPass(pass)){showAuthMsg('loginErr','❌ Incorrect password. Try again.');return;}
+
+  currentAccount=acc;
+  saveSession(acc.id);
+  loadAccountIntoPD(acc);
+  showScreen('dashboardScreen');
+  renderDashboard();
+}
+
+// ── LOG OUT ──
+function doLogout(){
+  clearSession();
+  currentAccount=null;
+  // Reset PD to guest
+  playerId='guest_'+Math.random().toString(36).substr(2,8);
+  playerName='Crypto Frog';
+  PD={id:playerId,name:playerName,bestScore:0,maxLevel:1,totalCoins:0,totalDeaths:0,maxCombo:1,gamesPlayed:0,totalGems:0,
+    cryptoEarned:0,cryptoBalance:0,ownedFrogs:[0],equippedFrog:0,storeReturnScreen:'startScreen'};
+  showScreen('authScreen');
+}
+
+// ── Load account data into PD ──
+function loadAccountIntoPD(acc){
+  playerId=acc.id;
+  playerName=acc.name;
+  PD={
+    id:acc.id,name:acc.name,
+    bestScore:acc.bestScore||0,
+    maxLevel:acc.maxLevel||1,
+    totalCoins:acc.totalCoins||0,
+    totalDeaths:acc.totalDeaths||0,
+    maxCombo:acc.maxCombo||1,
+    gamesPlayed:acc.gamesPlayed||0,
+    totalGems:acc.totalGems||0,
+    wallet:acc.wallet||{btc:0,eth:0,sol:0,bnb:0,gems:0},
+    cryptoEarned:acc.cryptoEarned||0,
+    cryptoBalance:acc.cryptoBalance||0,
+    ownedFrogs:acc.ownedFrogs||[0],
+    equippedFrog:acc.equippedFrog||0,
+    storeReturnScreen:'startScreen',
+  };
+  updateStart();
+}
+
+// ── Save PD back to account ──
+async function saveAccountStats(){
+  if(!currentAccount)return;
+  currentAccount={
+    ...currentAccount,
+    bestScore:PD.bestScore,maxLevel:PD.maxLevel,
+    totalCoins:PD.totalCoins,totalDeaths:PD.totalDeaths,
+    maxCombo:PD.maxCombo,gamesPlayed:(PD.gamesPlayed||0)+1,
+    totalGems:PD.totalGems||0,
+    wallet:PD.wallet||{btc:0,eth:0,sol:0,bnb:0,gems:0},
+    cryptoEarned:PD.cryptoEarned||0,
+    cryptoBalance:PD.cryptoBalance||0,
+    ownedFrogs:PD.ownedFrogs||[0],
+    equippedFrog:PD.equippedFrog||0,
+  };
+  await saveAccount(currentAccount);
+  await dbP('lb',{id:playerId,name:playerName,score:PD.bestScore,level:PD.maxLevel,combo:PD.maxCombo});
+}
+
+// Override savePD to also save to account
+const _origSavePD=savePD;
+savePD=async function(){
+  await _origSavePD();
+  await saveAccountStats();
+};
+
+// ── COIN TRACKING in wallet ──
+function trackCoinInWallet(coinLabel){
+  if(!PD.wallet)PD.wallet={btc:0,eth:0,sol:0,bnb:0,gems:0};
+  const map={BTC:'btc',ETH:'eth',SOL:'sol',BNB:'bnb',GEM:'gems',SAPPHIRE:'gems',DIAMOND:'gems'};
+  const key=map[coinLabel];
+  if(key)PD.wallet[key]=(PD.wallet[key]||0)+1;
+}
+
+// ═══════════════════════════════════════
+//  DASHBOARD RENDERER
+// ═══════════════════════════════════════
+const ACHIEVEMENTS=[
+  {id:'first_hop',  icon:'🐸', name:'First Hop',    desc:'Start your first game',    check:p=>p.gamesPlayed>=1},
+  {id:'coin_100',   icon:'🪙', name:'HODLer',       desc:'Collect 100 crypto coins',  check:p=>p.totalCoins>=100},
+  {id:'level_10',   icon:'🎯', name:'Level 10',     desc:'Reach level 10',            check:p=>p.maxLevel>=10},
+  {id:'level_25',   icon:'⚡', name:'Quarter Way',  desc:'Reach level 25',            check:p=>p.maxLevel>=25},
+  {id:'level_50',   icon:'🔥', name:'Halfway There',desc:'Reach level 50',            check:p=>p.maxLevel>=50},
+  {id:'level_100',  icon:'🏆', name:'CRYPTO GOD',   desc:'Beat all 100 levels',       check:p=>p.maxLevel>=100},
+  {id:'combo_5',    icon:'💥', name:'Combo King',   desc:'Hit combo x5',              check:p=>p.maxCombo>=5},
+  {id:'combo_10',   icon:'🌟', name:'Ultra Combo',  desc:'Hit combo x10',             check:p=>p.maxCombo>=10},
+  {id:'no_death',   icon:'😇', name:'Deathless',    desc:'0 deaths recorded',         check:p=>p.totalDeaths===0&&p.gamesPlayed>0},
+  {id:'die_100',    icon:'💀', name:'Persistent',   desc:'Die 100 times (keep going!)',check:p=>p.totalDeaths>=100},
+  {id:'gem_10',     icon:'💎', name:'Gem Hunter',   desc:'Collect 10 gems',           check:p=>p.totalGems>=10},
+  {id:'score_10k',  icon:'💰', name:'10K Club',     desc:'Score 10,000 points',       check:p=>p.bestScore>=10000},
+];
+
+function getRank(p){
+  if(p.maxLevel>=100)return{label:'CRYPTO GOD',emoji:'👑',cls:'badge-legend'};
+  if(p.maxLevel>=75)return{label:'LEGEND',emoji:'🏆',cls:'badge-legend'};
+  if(p.maxLevel>=50)return{label:'MASTER',emoji:'🔥',cls:'badge-pro'};
+  if(p.maxLevel>=25)return{label:'PRO',emoji:'⚡',cls:'badge-pro'};
+  if(p.maxLevel>=10)return{label:'VETERAN',emoji:'🎯',cls:'badge-pro'};
+  return{label:'ROOKIE',emoji:'🌱',cls:'badge-rookie'};
+}
+
+function getZoneLabel(lvl){
+  const z=['SWAMP CHAIN','LAVA LEDGER','FROZEN BLOCK','VOID WALLET','STORM NODE'];
+  return z[Math.min(Math.floor((lvl-1)/20),4)];
+}
+
+function renderDashboard(){
+  const acc=currentAccount;
+  const p=PD;
+
+  // Header
+  document.getElementById('dashAvatar').textContent=acc?.avatar||'🐸';
+  document.getElementById('dashName').textContent=acc?.name||p.name||'CryptoFrog';
+  const contact=acc?.email||acc?.phone||'';
+  document.getElementById('dashEmail').textContent=contact?'📧 '+contact:'Guest Player';
+
+  const rank=getRank(p);
+  const badgeEl=document.getElementById('dashRankBadge');
+  badgeEl.textContent=rank.emoji+' '+rank.label;
+  badgeEl.className='dash-badge '+rank.cls;
+  document.getElementById('dashRankFull').textContent=rank.emoji+' '+rank.label+' · LEVEL '+p.maxLevel;
+
+  // Stats
+  document.getElementById('ds_score').textContent=(p.bestScore||0).toLocaleString();
+  document.getElementById('ds_level').textContent=p.maxLevel||1;
+  document.getElementById('ds_coins').textContent=(p.cryptoBalance||0).toFixed(4)+'₿';
+  document.getElementById('ds_combo').textContent='x'+(p.maxCombo||1);
+  document.getElementById('ds_deaths').textContent=p.totalDeaths||0;
+  document.getElementById('ds_games').textContent=p.gamesPlayed||0;
+
+  // Progress
+  const pct=Math.min(100,((p.maxLevel-1)/99)*100);
+  document.getElementById('ds_pct').textContent=pct.toFixed(0)+'%';
+  document.getElementById('ds_progBar').style.width=pct+'%';
+  document.getElementById('ds_zoneLabel').textContent=getZoneLabel(p.maxLevel);
+  document.getElementById('dashContLvl').textContent=p.maxLevel;
+
+  // Wallet
+  const w=p.wallet||{btc:0,eth:0,sol:0,bnb:0,gems:0};
+  document.getElementById('w_btc').textContent=(w.btc||0).toLocaleString();
+  document.getElementById('w_eth').textContent=(w.eth||0).toLocaleString();
+  document.getElementById('w_sol').textContent=(w.sol||0).toLocaleString();
+  document.getElementById('w_gems').textContent=(w.gems||0).toLocaleString();
+  const total=(w.btc||0)*100+(w.eth||0)*50+(w.sol||0)*30+(w.gems||0)*200+(p.totalCoins||0);
+  document.getElementById('w_total').textContent=(p.cryptoEarned||0).toFixed(4)+'₿';
+
+  // Achievements
+  const grid=document.getElementById('achievementsGrid');grid.innerHTML='';
+  ACHIEVEMENTS.forEach(ach=>{
+    const unlocked=ach.check(p);
+    const div=document.createElement('div');
+    div.className='achievement'+(unlocked?' unlocked':'');
+    div.innerHTML=`
+      <div class="ach-icon ${unlocked?'':'ach-locked'}">${ach.icon}</div>
+      <div>
+        <div class="ach-name">${ach.name}</div>
+        <div class="ach-desc">${ach.desc}</div>
+      </div>`;
+    grid.appendChild(div);
+  });
+
+  // Continue button
+  document.getElementById('contLvl').textContent=p.maxLevel;
+
+  // My Frogs Collection
+  renderDashboardFrogs();
+}
+
+function renderDashboardFrogs(){
+  const p=PD;
+  const owned=p.ownedFrogs||[0];
+  const equipped=p.equippedFrog||0;
+  const grid=document.getElementById('dashFrogsGrid');
+  if(!grid)return;
+  grid.innerHTML='';
+
+  // Active frog banner
+  const activeFrog=FROG_STORE_CHARS[equipped]||FROG_STORE_CHARS[0];
+  const activeMult=getFrogMultiplier(equipped);
+  document.getElementById('dashActiveFrogEmoji').textContent=activeFrog.emoji;
+  document.getElementById('dashActiveFrogName').textContent=activeFrog.name;
+  document.getElementById('dashActiveFrogMult').textContent='×'+activeMult+' Score Multiplier'+(activeMult>1?' 🔥':'');
+  document.getElementById('dashActiveFrogDesc').textContent=activeFrog.desc;
+
+  // Render owned frogs
+  owned.forEach(id=>{
+    const frog=FROG_STORE_CHARS[id];
+    if(!frog)return;
+    const mult=getFrogMultiplier(id);
+    const isEquipped=id===equipped;
+    const chip=document.createElement('div');
+    chip.className='my-frog-chip'+(isEquipped?' active':'');
+    chip.innerHTML=`
+      ${isEquipped?'<div class="my-frog-active-badge">ON</div>':''}
+      <span class="my-frog-chip-emoji">${frog.emoji}</span>
+      <div class="my-frog-chip-name">${frog.name}</div>
+      <div class="my-frog-chip-mult">${mult>1?'×'+mult:' '}</div>`;
+    chip.onclick=()=>{
+      PD.equippedFrog=id;
+      savePD();
+      renderDashboardFrogs();
+      toast(frog.emoji+' '+frog.name+' equipped!'+(mult>1?' ×'+mult+' score bonus!':''));
+    };
+    grid.appendChild(chip);
+  });
+}
+
+// ── RESET PROGRESS ──
+function confirmResetProgress(){
+  if(!confirm('⚠️ Reset ALL your game progress?\nBest score, levels, coins — everything will be lost.\nYour account will remain.'))return;
+  PD.bestScore=0;PD.maxLevel=1;PD.totalCoins=0;PD.totalDeaths=0;PD.maxCombo=1;PD.gamesPlayed=0;PD.totalGems=0;PD.wallet={btc:0,eth:0,sol:0,bnb:0,gems:0};PD.cryptoEarned=0;PD.cryptoBalance=0;PD.ownedFrogs=[0];PD.equippedFrog=0;
+  if(currentAccount){currentAccount={...currentAccount,...PD};saveAccount(currentAccount);}
+  renderDashboard();updateStart();
+  toast('🗑 Progress reset!');
+}
+
+// ═══════════════════════════════════════
+//  FROG STORE
+// ═══════════════════════════════════════
+const FROG_STORE_CHARS=[
+  {id:0,  name:'Classic Frog',    emoji:'🐸', desc:'The original'},
+  {id:1,  name:'Golden Frog',     emoji:'🟡', desc:'Shimmering gold'},
+  {id:2,  name:'Dragon Frog',     emoji:'🐉', desc:'Fire breather'},
+  {id:3,  name:'Ninja Frog',      emoji:'🥷', desc:'Silent hopper'},
+  {id:4,  name:'Robot Frog',      emoji:'🤖', desc:'Cyber hopper'},
+  {id:5,  name:'Alien Frog',      emoji:'👾', desc:'From the void'},
+  {id:6,  name:'Wizard Frog',     emoji:'🧙', desc:'Magic master'},
+  {id:7,  name:'Vampire Frog',    emoji:'🧛', desc:'Creature of night'},
+  {id:8,  name:'Zombie Frog',     emoji:'🧟', desc:'Undead hopper'},
+  {id:9,  name:'Ghost Frog',      emoji:'👻', desc:'Invisible hops'},
+  {id:10, name:'Devil Frog',      emoji:'😈', desc:'Hellfire jumps'},
+  {id:11, name:'Angel Frog',      emoji:'😇', desc:'Holy hopper'},
+  {id:12, name:'Skull Frog',      emoji:'💀', desc:'Death defying'},
+  {id:13, name:'Crown Frog',      emoji:'👑', desc:'Royal hopper'},
+  {id:14, name:'Fire Frog',       emoji:'🔥', desc:'Blazing speed'},
+  {id:15, name:'Ice Frog',        emoji:'❄️', desc:'Frozen reflexes'},
+  {id:16, name:'Thunder Frog',    emoji:'⚡', desc:'Lightning fast'},
+  {id:17, name:'Rainbow Frog',    emoji:'🌈', desc:'Colorful hops'},
+  {id:18, name:'Diamond Frog',    emoji:'💎', desc:'Hardest hopper'},
+  {id:19, name:'Star Frog',       emoji:'⭐', desc:'Star of the show'},
+  {id:20, name:'Moon Frog',       emoji:'🌙', desc:'Lunar hopper'},
+  {id:21, name:'Sun Frog',        emoji:'☀️',  desc:'Solar power'},
+  {id:22, name:'Ocean Frog',      emoji:'🌊', desc:'Wave rider'},
+  {id:23, name:'Storm Frog',      emoji:'🌪️', desc:'Tornado hopper'},
+  {id:24, name:'Crystal Frog',    emoji:'🔮', desc:'Future seer'},
+  {id:25, name:'Samurai Frog',    emoji:'⚔️',  desc:'Warrior code'},
+  {id:26, name:'Pirate Frog',     emoji:'☠️',  desc:'Treasure hunter'},
+  {id:27, name:'Astronaut Frog',  emoji:'🚀', desc:'Space hopper'},
+  {id:28, name:'Cyber Frog',      emoji:'🦾', desc:'Augmented hopper'},
+  {id:29, name:'Shadow Frog',     emoji:'🌑', desc:'Darkness master'},
+  {id:30, name:'Lava Frog',       emoji:'🌋', desc:'Volcanic power'},
+  {id:31, name:'Jungle Frog',     emoji:'🌿', desc:'Nature spirit'},
+  {id:32, name:'Neon Frog',       emoji:'🟣', desc:'Glow in dark'},
+  {id:33, name:'Gold Coin Frog',  emoji:'🪙', desc:'Money hops'},
+  {id:34, name:'BTC Frog',        emoji:'₿',  desc:'Crypto king'},
+  {id:35, name:'ETH Frog',        emoji:'Ξ',  desc:'Smart hopper'},
+  {id:36, name:'Doge Frog',       emoji:'🐕', desc:'Much hop wow'},
+  {id:37, name:'Panda Frog',      emoji:'🐼', desc:'Bamboo bouncer'},
+  {id:38, name:'Tiger Frog',      emoji:'🐯', desc:'Fierce hopper'},
+  {id:39, name:'Eagle Frog',      emoji:'🦅', desc:'Sky king'},
+  {id:40, name:'Phoenix Frog',    emoji:'🦜', desc:'Reborn hopper'},
+  {id:41, name:'Unicorn Frog',    emoji:'🦄', desc:'Magical hopper'},
+  {id:42, name:'Sphinx Frog',     emoji:'🏛️', desc:'Ancient wisdom'},
+  {id:43, name:'Titan Frog',      emoji:'🗿', desc:'Stone cold'},
+  {id:44, name:'Nova Frog',       emoji:'💫', desc:'Cosmic hops'},
+  {id:45, name:'Void Frog',       emoji:'🕳️', desc:'Black hole hops'},
+  {id:46, name:'Atomic Frog',     emoji:'⚛️',  desc:'Nuclear power'},
+  {id:47, name:'Gem Frog',        emoji:'💠', desc:'Precious hops'},
+  {id:48, name:'Legendary Frog',  emoji:'🏆', desc:'Hall of fame'},
+  {id:49, name:'GOD Frog',        emoji:'🌟', desc:'Ultimate being'},
+];
+// Price: id 0 is free, id 1 costs 50, id 2 costs 100, ... id 49 costs 2450 crypto
+function getFrogPrice(id){return id===0?0:(id)*50;}
+
+// Score multiplier: frogs with price >= 800 (id >= 16) get bonus multiplier
+// id 16 (800₿) = x2, id 17 = x3 ... id 49 = x35
+function getFrogMultiplier(id){
+  if(id<16)return 1;
+  return 2+(id-16); // id16→2, id17→3 ... id49→35
+}
+
+// Get the active score multiplier based on equipped frog
+function getEquippedMultiplier(){
+  return getFrogMultiplier(PD.equippedFrog||0);
+}
+
+function openStore(){
+  PD.storeReturnScreen=document.querySelector('.screen:not(.hidden)')?document.querySelector('.screen:not(.hidden)').id:'startScreen';
+  renderStore();
+  showScreen('storeScreen');
+}
+function closeStore(){
+  // Go back to previous screen context
+  const prev=PD.storeReturnScreen||'startScreen';
+  showScreen(prev);
+  if(prev==='dashboardScreen')renderDashboard();
+}
+
+function renderStore(){
+  const balance=PD.cryptoBalance||0;
+  document.getElementById('storeBalance').textContent=balance.toFixed(4);
+  const activeMult=getEquippedMultiplier();
+  const multEl=document.getElementById('storeActiveMult');
+  if(multEl){
+    if(activeMult>1){
+      const equippedFrogData=FROG_STORE_CHARS[PD.equippedFrog||0];
+      multEl.textContent='Active Bonus: '+equippedFrogData.emoji+' ×'+activeMult+' SCORE MULTIPLIER';
+      multEl.style.display='block';
+    } else {
+      multEl.textContent='No bonus active — buy a premium frog for score multipliers!';
+      multEl.style.display='block';
+    }
+  }
+  const grid=document.getElementById('storeGrid');
+  grid.innerHTML='';
+  const owned=PD.ownedFrogs||[0];
+  const equipped=PD.equippedFrog||0;
+  FROG_STORE_CHARS.forEach(frog=>{
+    const price=getFrogPrice(frog.id);
+    const isOwned=owned.includes(frog.id);
+    const isEquipped=frog.id===equipped;
+    const canAfford=balance>=price;
+    const card=document.createElement('div');
+    card.className='frog-card'+(isEquipped?' equipped':isOwned?' owned':(!canAfford&&!isOwned)?' cant-afford':'');
+    const mult=getFrogMultiplier(frog.id);
+    const multBadge=mult>1?`<div class="frog-mult">×${mult} SCORE</div>`:'';
+    card.innerHTML=`
+      ${isEquipped?'<div class="equipped-badge">ON</div>':''}
+      <span class="frog-emoji">${frog.emoji}</span>
+      <div class="frog-name">${frog.name}</div>
+      ${multBadge}
+      <div class="frog-price ${isOwned||isEquipped?'owned-label':''}">
+        ${isEquipped?'✅ EQUIPPED':isOwned?'TAP TO USE':(price===0?'FREE':price+'₿')}
+      </div>`;
+    card.onclick=()=>handleFrogCardClick(frog,price,isOwned,isEquipped);
+    grid.appendChild(card);
+  });
+}
+
+// Pending buy state
+let _pendingBuyFrog=null;
+
+function handleFrogCardClick(frog,price,isOwned,isEquipped){
+  if(isEquipped){toast(frog.emoji+' Already equipped!');return;}
+  if(isOwned){
+    // Just equip — no payment needed
+    PD.equippedFrog=frog.id;
+    savePD();renderStore();
+    if(typeof renderDashboardFrogs==='function')renderDashboardFrogs();
+    const mult=getFrogMultiplier(frog.id);
+    toast('🐸 '+frog.name+' equipped!'+(mult>1?' ×'+mult+' active!':''));
+    return;
+  }
+  // Not owned — check balance then show buy modal
+  const balance=PD.cryptoBalance||0;
+  if(balance<price){
+    toast('❌ Need '+price+'₿ · You have '+balance.toFixed(4)+'₿');
+    return;
+  }
+  // Show custom buy modal (no confirm() — works everywhere)
+  openBuyModal(frog,price,balance);
+}
+
+function openBuyModal(frog,price,balance){
+  _pendingBuyFrog={frog,price};
+  document.getElementById('bmEmoji').textContent=frog.emoji;
+  document.getElementById('bmTitle').textContent='Buy '+frog.name+'?';
+  document.getElementById('bmPrice').textContent=price+'₿';
+  document.getElementById('bmBalance').textContent='Your balance: '+balance.toFixed(4)+'₿  →  '+(balance-price).toFixed(4)+'₿ after';
+  const mult=getFrogMultiplier(frog.id);
+  const multEl=document.getElementById('bmMult');
+  if(mult>1){
+    multEl.textContent='🔥 ×'+mult+' Score Multiplier Bonus!';
+    multEl.style.display='inline-block';
+  } else {
+    multEl.style.display='none';
+  }
+  document.getElementById('buyConfirmModal').classList.add('open');
+}
+
+function closeBuyModal(){
+  _pendingBuyFrog=null;
+  document.getElementById('buyConfirmModal').classList.remove('open');
+}
+
+function confirmBuyFrog(){
+  if(!_pendingBuyFrog)return;
+  const {frog,price}=_pendingBuyFrog;
+  closeBuyModal();
+
+  const balance=PD.cryptoBalance||0;
+  if(balance<price){toast('❌ Insufficient balance!');return;}
+
+  // Deduct and add to owned
+  PD.cryptoBalance=parseFloat((balance-price).toFixed(6));
+  if(!PD.ownedFrogs)PD.ownedFrogs=[0];
+  if(!PD.ownedFrogs.includes(frog.id))PD.ownedFrogs.push(frog.id);
+  PD.equippedFrog=frog.id;
+
+  savePD();
+  renderStore();
+
+  // Update all balance displays
+  document.getElementById('storeBalance').textContent=PD.cryptoBalance.toFixed(4);
+  const dsCoins=document.getElementById('ds_coins');
+  if(dsCoins)dsCoins.textContent=PD.cryptoBalance.toFixed(4)+'₿';
+
+  const newMult=getFrogMultiplier(frog.id);
+  toast('🎉 '+frog.emoji+' '+frog.name+' bought!'+(newMult>1?' ×'+newMult+' active!':''));
+  spawnFx(frog.emoji,12);
+
+  if(typeof renderDashboardFrogs==='function')renderDashboardFrogs();
+}
+
+// ═══════════════════════════════════════
+
+
+// ═══════════════════════════════════════
+//  ADMIN DASHBOARD
+// ═══════════════════════════════════════
+const ADMIN_PASS_HASH='adm_frogcrypto_2024'; // hashed in check below
+let adminPlayers=[];
+
+// Hardened password check using the same hashPass function
+// Admin password: FrogAdmin@2024 (change this to your preferred password)
+const ADMIN_SECRET=hashPass('FrogAdmin@2024');
+
+function doAdminLogin(){
+  const pass=document.getElementById('adminPassInput').value;
+  const errEl=document.getElementById('adminLoginErr');
+  errEl.classList.remove('show');
+  if(!pass){errEl.textContent='⚠️ Enter the admin password';errEl.classList.add('show');return;}
+  if(hashPass(pass)!==ADMIN_SECRET){
+    errEl.textContent='❌ Incorrect password. Access denied.';errEl.classList.add('show');
+    document.getElementById('adminPassInput').value='';
+    // Brief delay to prevent brute force
+    setTimeout(()=>errEl.classList.remove('show'),3000);
+    return;
+  }
+  document.getElementById('adminPassInput').value='';
+  localStorage.setItem('fhc_admin_session','1');
+  showScreen('adminScreen');
+  loadAdminDashboard();
+}
+
+function doAdminLogout(){
+  localStorage.removeItem('fhc_admin_session');
+  showScreen('authScreen');
+}
+
+function openAdminLogin(){
+  // Check existing session
+  if(localStorage.getItem('fhc_admin_session')==='1'){
+    showScreen('adminScreen');
+    loadAdminDashboard();
+    return;
+  }
+  showScreen('adminLoginScreen');
+}
+
+async function loadAdminDashboard(){
+  const accounts=await dbA('accounts');
+  adminPlayers=accounts;
+
+  // Overview stats
+  document.getElementById('adm_totalPlayers').textContent=accounts.length;
+  const totalCrypto=accounts.reduce((s,a)=>s+(a.cryptoBalance||0),0);
+  document.getElementById('adm_totalCrypto').textContent=totalCrypto.toFixed(2)+'₿';
+  const topScore=Math.max(0,...accounts.map(a=>a.bestScore||0));
+  document.getElementById('adm_topScore').textContent=topScore.toLocaleString();
+
+  renderAdminPlayers(accounts);
+}
+
+function filterAdminPlayers(){
+  const q=document.getElementById('adminSearch').value.toLowerCase().trim();
+  const filtered=q?adminPlayers.filter(a=>
+    (a.name||'').toLowerCase().includes(q)||
+    (a.email||'').toLowerCase().includes(q)||
+    (a.phone||'').includes(q)
+  ):adminPlayers;
+  renderAdminPlayers(filtered);
+}
+
+function renderAdminPlayers(players){
+  const list=document.getElementById('adminPlayerList');
+  list.innerHTML='';
+  if(!players.length){
+    list.innerHTML='<div style="text-align:center;color:rgba(255,255,255,.3);font-family:Orbitron,monospace;font-size:.8rem;padding:30px">No players found</div>';
+    return;
+  }
+  players.forEach(acc=>{
+    const card=document.createElement('div');
+    card.className='player-card';
+    card.id='pcard_'+acc.id;
+    const isCurrent=acc.id===playerId;
+    const owned=acc.ownedFrogs||[0];
+    const equippedId=acc.equippedFrog||0;
+    const ownedCount=owned.length;
+
+    // Build equipped frog dropdown options
+    const equippedOptions=owned.map(id=>{
+      const f=FROG_STORE_CHARS[id];
+      return `<option value="${id}" ${id===equippedId?'selected':''}>${f?f.emoji+' '+f.name:'Frog #'+id}</option>`;
+    }).join('');
+
+    card.innerHTML=`
+      <div class="player-card-header" onclick="togglePlayerEdit('${acc.id}')">
+        <div>
+          <div class="player-card-name">${acc.avatar||'🐸'} ${escHtml(acc.name||'Unknown')} ${isCurrent?'<span class="admin-badge">YOU</span>':''}</div>
+          <div class="player-card-meta">${acc.email?'📧 '+escHtml(acc.email):''}${acc.phone?' 📱 '+escHtml(acc.phone):''}</div>
+          <div class="player-card-id">ID: ${acc.id} · 🐸 ${ownedCount} frog${ownedCount!==1?'s':''} owned</div>
+        </div>
+        <div style="text-align:right;flex-shrink:0">
+          <div style="font-family:'Orbitron',monospace;font-size:.8rem;color:#f7931a;font-weight:900">${(acc.cryptoBalance||0).toFixed(4)}₿</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.4)">Score: ${(acc.bestScore||0).toLocaleString()}</div>
+          <div style="font-size:.65rem;color:rgba(255,255,255,.4)">Lv.${acc.maxLevel||1}</div>
+        </div>
+      </div>
+      <div class="player-edit-panel" id="pedit_${acc.id}">
+        <!-- Basic info fields -->
+        <div class="edit-row">
+          <span class="edit-label">Display Name</span>
+          <input class="edit-input" id="ef_name_${acc.id}" value="${escHtml(acc.name||'')}" placeholder="Player name">
+        </div>
+        <div class="edit-row">
+          <span class="edit-label">Email</span>
+          <input class="edit-input" id="ef_email_${acc.id}" value="${escHtml(acc.email||'')}" placeholder="email@example.com">
+        </div>
+        <div class="edit-row">
+          <span class="edit-label">Phone</span>
+          <input class="edit-input" id="ef_phone_${acc.id}" value="${escHtml(acc.phone||'')}" placeholder="+1 555 000 0000">
+        </div>
+        <div class="edit-row">
+          <span class="edit-label">Crypto Balance ₿</span>
+          <input class="edit-input" id="ef_crypto_${acc.id}" type="number" step="0.0001" min="0" value="${(acc.cryptoBalance||0).toFixed(4)}" placeholder="0.0000">
+        </div>
+        <div class="edit-row">
+          <span class="edit-label">Best Score</span>
+          <input class="edit-input" id="ef_score_${acc.id}" type="number" min="0" value="${acc.bestScore||0}" placeholder="0">
+        </div>
+        <div class="edit-row">
+          <span class="edit-label">Max Level</span>
+          <input class="edit-input" id="ef_level_${acc.id}" type="number" min="1" max="100" value="${acc.maxLevel||1}" placeholder="1">
+        </div>
+        <div class="edit-row">
+          <span class="edit-label">New Password</span>
+          <input class="edit-input" id="ef_pass_${acc.id}" type="password" placeholder="Leave blank to keep current">
+        </div>
+
+        <!-- Frog Collection Section -->
+        <div class="admin-frogs-section">
+          <div class="admin-frogs-title">🐸 Frog Collection (tap to toggle owned)</div>
+          <div class="admin-frog-legend">
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:#00e676"></span> Owned</span>
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#f7931a"></span> Equipped</span>
+            <span><span style="display:inline-block;width:8px;height:8px;border-radius:2px;border:1px solid rgba(255,255,255,.2)"></span> Not owned</span>
+          </div>
+          <div class="admin-frog-grid" id="afgrid_${acc.id}"></div>
+          <div class="admin-equipped-selector">
+            <label>🎯 Equipped Frog (active in game)</label>
+            <select id="ef_equipped_${acc.id}">${equippedOptions}</select>
+          </div>
+        </div>
+
+        <div class="edit-actions" style="margin-top:12px">
+          <button class="btn-admin-save" onclick="savePlayerEdit('${acc.id}')">💾 SAVE ALL CHANGES</button>
+          <button class="btn-admin-del" onclick="deletePlayer('${acc.id}','${escHtml(acc.name||'')}')">🗑 DELETE</button>
+        </div>
+      </div>`;
+    list.appendChild(card);
+
+    // Render frog grid for this player
+    renderAdminFrogGrid(acc);
+  });
+}
+
+function renderAdminFrogGrid(acc){
+  const grid=document.getElementById('afgrid_'+acc.id);
+  if(!grid)return;
+  grid.innerHTML='';
+  const owned=acc.ownedFrogs||[0];
+  const equippedId=acc.equippedFrog||0;
+
+  FROG_STORE_CHARS.forEach(frog=>{
+    const isOwned=owned.includes(frog.id);
+    const isEquipped=frog.id===equippedId;
+    const price=getFrogPrice(frog.id);
+    const tile=document.createElement('div');
+    tile.className='admin-frog-tile'+(isEquipped?' equipped-frog':isOwned?' owned':'');
+    tile.title=(isOwned?'✅ Owned':'❌ Not owned')+' · '+frog.name+(price>0?' ('+price+'₿)':' (FREE)');
+    tile.innerHTML=`
+      ${isOwned?'<div class="admin-frog-owned-dot"></div>':''}
+      ${isEquipped?'<div class="admin-frog-equipped-dot">EQ</div>':''}
+      <span class="admin-frog-tile-emoji">${frog.emoji}</span>
+      <div class="admin-frog-tile-name">${frog.name}</div>
+      <div class="admin-frog-tile-price">${price>0?price+'₿':'FREE'}</div>`;
+    tile.onclick=()=>adminToggleFrog(acc.id,frog.id);
+    grid.appendChild(tile);
+  });
+}
+
+function adminToggleFrog(accId, frogId){
+  const acc=adminPlayers.find(a=>a.id===accId);
+  if(!acc)return;
+  if(!acc.ownedFrogs)acc.ownedFrogs=[0];
+
+  const idx=acc.ownedFrogs.indexOf(frogId);
+  if(frogId===0){toast('Classic Frog cannot be removed!');return;}
+
+  if(idx>=0){
+    // Remove frog
+    acc.ownedFrogs.splice(idx,1);
+    // If it was equipped, reset to classic
+    if(acc.equippedFrog===frogId){
+      acc.equippedFrog=0;
+      // Update dropdown
+      const sel=document.getElementById('ef_equipped_'+accId);
+      if(sel)sel.value='0';
+    }
+    toast('🐸 '+FROG_STORE_CHARS[frogId].name+' removed from collection');
+  } else {
+    // Add frog
+    acc.ownedFrogs.push(frogId);
+    toast('✅ '+FROG_STORE_CHARS[frogId].name+' added to collection');
+  }
+
+  // Re-sort owned frogs
+  acc.ownedFrogs.sort((a,b)=>a-b);
+
+  // Refresh the frog grid
+  renderAdminFrogGrid(acc);
+
+  // Rebuild the equipped dropdown with new owned list
+  const sel=document.getElementById('ef_equipped_'+accId);
+  if(sel){
+    const currentVal=sel.value;
+    sel.innerHTML=acc.ownedFrogs.map(id=>{
+      const f=FROG_STORE_CHARS[id];
+      return `<option value="${id}" ${String(id)===String(currentVal)?'selected':''}>${f?f.emoji+' '+f.name:'Frog #'+id}</option>`;
+    }).join('');
+  }
+}
+
+function togglePlayerEdit(id){
+  const panel=document.getElementById('pedit_'+id);
+  if(panel)panel.classList.toggle('open');
+}
+
+function escHtml(str){
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+async function savePlayerEdit(id){
+  const acc=adminPlayers.find(a=>a.id===id);
+  if(!acc){toast('❌ Player not found');return;}
+
+  const name=document.getElementById('ef_name_'+id)?.value.trim();
+  const email=document.getElementById('ef_email_'+id)?.value.trim().toLowerCase();
+  const phone=document.getElementById('ef_phone_'+id)?.value.trim();
+  const crypto=parseFloat(document.getElementById('ef_crypto_'+id)?.value)||0;
+  const score=parseInt(document.getElementById('ef_score_'+id)?.value)||0;
+  const level=Math.min(100,Math.max(1,parseInt(document.getElementById('ef_level_'+id)?.value)||1));
+  const newPass=document.getElementById('ef_pass_'+id)?.value;
+
+  if(!name||name.length<1){toast('❌ Name cannot be empty');return;}
+
+  // Read frog data from the admin grid state (use adminPlayers live copy)
+  const liveAcc=adminPlayers.find(a=>a.id===id)||acc;
+  const equippedFrogVal=parseInt(document.getElementById('ef_equipped_'+id)?.value||'0');
+  const updatedOwned=liveAcc.ownedFrogs||[0];
+  // Make sure equipped frog is in owned list
+  if(!updatedOwned.includes(equippedFrogVal))updatedOwned.unshift(equippedFrogVal);
+
+  const updated={
+    ...acc,
+    name:name,
+    email:email||acc.email,
+    phone:phone||acc.phone,
+    cryptoBalance:parseFloat(crypto.toFixed(6)),
+    cryptoEarned:Math.max(acc.cryptoEarned||0,crypto),
+    bestScore:score,
+    maxLevel:level,
+    ownedFrogs:updatedOwned,
+    equippedFrog:equippedFrogVal,
+  };
+  if(newPass&&newPass.length>=6){
+    updated.passHash=hashPass(newPass);
+  } else if(newPass&&newPass.length>0&&newPass.length<6){
+    toast('❌ New password must be at least 6 characters');return;
+  }
+
+  await saveAccount(updated);
+
+  // Update local adminPlayers array
+  const idx=adminPlayers.findIndex(a=>a.id===id);
+  if(idx>=0)adminPlayers[idx]=updated;
+
+  // If editing current logged-in player, sync PD
+  if(id===playerId){
+    PD.bestScore=score;
+    PD.maxLevel=level;
+    PD.cryptoBalance=updated.cryptoBalance;
+    PD.cryptoEarned=updated.cryptoEarned;
+    PD.name=name;
+    PD.ownedFrogs=updated.ownedFrogs;
+    PD.equippedFrog=updated.equippedFrog;
+    currentAccount=updated;
+    updateStart();
+    if(typeof renderDashboardFrogs==='function')renderDashboardFrogs();
+  }
+
+  toast('✅ '+name+' updated!');
+  // Re-render that card area
+  loadAdminDashboard();
+}
+
+async function deletePlayer(id,name){
+  if(!confirm('⚠️ Delete account for '+name+'?\nThis cannot be undone!'))return;
+  // Remove from IndexedDB accounts store
+  if(db){
+    await new Promise(res=>{
+      const tx=db.transaction('accounts','readwrite');
+      tx.objectStore('accounts').delete(id);
+      tx.oncomplete=res;tx.onerror=res;
+    });
+  } else {
+    localStorage.removeItem('acc_'+id);
+  }
+  toast('🗑 '+name+' deleted');
+  loadAdminDashboard();
+}
+
+// ═══════════════════════════════════════
+
+// ═══════════════ RESIZE ═══════════════
+window.addEventListener('resize',()=>{if(!document.getElementById('gameScreen').classList.contains('hidden'))resizeCanvas();});
+
+// ═══════════════ INIT ═══════════════
+(async()=>{
+  await openDBWithAuth();
+
+  // Check for existing session
+  const sessionId=getSession();
+  if(sessionId){
+    const acc=await getAccount(sessionId);
+    if(acc){
+      currentAccount=acc;
+      loadAccountIntoPD(acc);
+      showScreen('dashboardScreen');
+      renderDashboard();
+      return;
+    }
+  }
+
+  // Check if Telegram user (auto-login without auth screen)
+  try{
+    const tg=window.Telegram?.WebApp;
+    if(tg?.initDataUnsafe?.user){
+      const u=tg.initDataUnsafe.user;
+      const tgId='tg_'+u.id;
+      const tgName=((u.first_name||'')+' '+(u.last_name||'')).trim()||u.username||'CryptoFrog';
+      tg.ready();tg.expand();
+      // Auto-create/load Telegram account
+      let acc=await getAccount(tgId);
+      if(!acc){
+        acc={id:tgId,name:tgName,email:'',phone:'',passHash:'',avatar:'🐸',createdAt:Date.now(),
+          bestScore:0,maxLevel:1,totalCoins:0,totalDeaths:0,maxCombo:1,gamesPlayed:0,totalGems:0,
+          wallet:{btc:0,eth:0,sol:0,bnb:0,gems:0},cryptoEarned:0,cryptoBalance:0,ownedFrogs:[0],equippedFrog:0};
+        await saveAccount(acc);
+      }
+      currentAccount=acc;
+      saveSession(tgId);
+      loadAccountIntoPD(acc);
+      showScreen('dashboardScreen');
+      renderDashboard();
+      return;
+    }
+  }catch(e){}
+
+  // Show auth screen for new users
+  showScreen('authScreen');
+  await loadPD();
+})();
+</script>
+</body>
+</html>
