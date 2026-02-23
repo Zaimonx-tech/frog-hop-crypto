@@ -15,35 +15,42 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Player ID required' });
     }
 
-    const connection = await getConnection();
-    const [players] = await connection.execute(
-      'SELECT * FROM players WHERE id = ? LIMIT 1',
-      [playerId]
-    );
-    await connection.end();
+    const client = await getConnection();
 
-    if (players.length === 0) {
-      return res.status(404).json({ error: 'Player not found' });
-    }
+    try {
+      const result = await client.query(
+        'SELECT * FROM players WHERE id = $1 LIMIT 1',
+        [playerId]
+      );
 
-    const player = players[0];
-    const ownedFrogs = typeof player.ownedFrogs === 'string'
-      ? JSON.parse(player.ownedFrogs)
-      : player.ownedFrogs;
-    const wallet = typeof player.wallet === 'string'
-      ? JSON.parse(player.wallet)
-      : player.wallet;
+      await client.end();
 
-    return res.status(200).json({
-      success: true,
-      player: {
-        ...player,
-        cryptoEarned: parseFloat(player.cryptoEarned),
-        cryptoBalance: parseFloat(player.cryptoBalance),
-        ownedFrogs,
-        wallet
+      if (result.rows.length === 0) {
+        return res.status(404).json({ error: 'Player not found' });
       }
-    });
+
+      const player = result.rows[0];
+      const ownedFrogs = typeof player.ownedFrogs === 'string'
+        ? JSON.parse(player.ownedFrogs)
+        : player.ownedFrogs;
+      const wallet = typeof player.wallet === 'string'
+        ? JSON.parse(player.wallet)
+        : player.wallet;
+
+      return res.status(200).json({
+        success: true,
+        player: {
+          ...player,
+          cryptoEarned: parseFloat(player.cryptoEarned),
+          cryptoBalance: parseFloat(player.cryptoBalance),
+          ownedFrogs,
+          wallet
+        }
+      });
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   } catch (error) {
     console.error('Get profile error:', error);
     return res.status(500).json({ error: 'Server error' });
