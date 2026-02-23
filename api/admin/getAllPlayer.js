@@ -17,20 +17,27 @@ export default async function handler(req, res) {
       return res.status(403).json({ error: 'Unauthorized' });
     }
 
-    const connection = await getConnection();
-    const [players] = await connection.execute(
-      `SELECT id, name, email, phone, avatar, bestScore, maxLevel, totalCoins,
-              cryptoBalance, equippedFrog, gamesPlayed, createdAt, lastLogin
-       FROM players ORDER BY bestScore DESC`
-    );
-    await connection.end();
+    const client = await getConnection();
 
-    const formatted = players.map(p => ({
-      ...p,
-      cryptoBalance: parseFloat(p.cryptoBalance || 0)
-    }));
+    try {
+      const result = await client.query(
+        `SELECT id, name, email, phone, avatar, "bestScore", "maxLevel", "totalCoins",
+                "cryptoBalance", "equippedFrog", "gamesPlayed", "createdAt", "lastLogin"
+         FROM players ORDER BY "bestScore" DESC`
+      );
 
-    return res.status(200).json({ success: true, players: formatted });
+      await client.end();
+
+      const formatted = result.rows.map(p => ({
+        ...p,
+        cryptoBalance: parseFloat(p.cryptoBalance || 0)
+      }));
+
+      return res.status(200).json({ success: true, players: formatted });
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   } catch (error) {
     console.error('Get all players error:', error);
     return res.status(500).json({ error: 'Server error' });
