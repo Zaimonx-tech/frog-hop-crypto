@@ -23,16 +23,21 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Player ID required' });
     }
 
-    const connection = await getConnection();
-    
-    await connection.execute('DELETE FROM game_stats WHERE playerId = ?', [playerId]);
-    await connection.execute('DELETE FROM transactions WHERE playerId = ?', [playerId]);
-    await connection.execute('DELETE FROM players WHERE id = ?', [playerId]);
-    await connection.execute('DELETE FROM leaderboard WHERE id = ?', [playerId]);
-    
-    await connection.end();
+    const client = await getConnection();
 
-    return res.status(200).json({ success: true, message: 'Player deleted' });
+    try {
+      await client.query('DELETE FROM game_stats WHERE "playerId" = $1', [playerId]);
+      await client.query('DELETE FROM transactions WHERE "playerId" = $1', [playerId]);
+      await client.query('DELETE FROM players WHERE id = $1', [playerId]);
+      await client.query('DELETE FROM leaderboard WHERE id = $1', [playerId]);
+
+      await client.end();
+
+      return res.status(200).json({ success: true, message: 'Player deleted' });
+    } catch (error) {
+      await client.end();
+      throw error;
+    }
   } catch (error) {
     console.error('Delete player error:', error);
     return res.status(500).json({ error: 'Server error' });
