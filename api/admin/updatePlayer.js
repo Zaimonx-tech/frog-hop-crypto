@@ -43,60 +43,75 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Player ID required' });
     }
 
-    const connection = await getConnection();
+    const client = await getConnection();
 
-    const updateFields = [];
-    const updateValues = [];
+    try {
+      const updateFields = [];
+      const updateValues = [];
+      let paramCount = 1;
 
-    if (name !== undefined) {
-      updateFields.push('name = ?');
-      updateValues.push(name);
-    }
-    if (email !== undefined) {
-      updateFields.push('email = ?');
-      updateValues.push(email);
-    }
-    if (bestScore !== undefined) {
-      updateFields.push('bestScore = ?');
-      updateValues.push(bestScore);
-    }
-    if (maxLevel !== undefined) {
-      updateFields.push('maxLevel = ?');
-      updateValues.push(maxLevel);
-    }
-    if (cryptoBalance !== undefined) {
-      updateFields.push('cryptoBalance = ?');
-      updateValues.push(cryptoBalance);
-    }
-    if (ownedFrogs) {
-      updateFields.push('ownedFrogs = ?');
-      updateValues.push(JSON.stringify(ownedFrogs));
-    }
-    if (equippedFrog !== undefined) {
-      updateFields.push('equippedFrog = ?');
-      updateValues.push(equippedFrog);
-    }
-    if (newPassword) {
-      updateFields.push('passHash = ?');
-      updateValues.push(hashPass(newPassword));
-    }
-    if (isActive !== undefined) {
-      updateFields.push('isActive = ?');
-      updateValues.push(isActive ? 1 : 0);
-    }
+      if (name !== undefined) {
+        updateFields.push(`name = $${paramCount}`);
+        updateValues.push(name);
+        paramCount++;
+      }
+      if (email !== undefined) {
+        updateFields.push(`email = $${paramCount}`);
+        updateValues.push(email);
+        paramCount++;
+      }
+      if (bestScore !== undefined) {
+        updateFields.push(`"bestScore" = $${paramCount}`);
+        updateValues.push(bestScore);
+        paramCount++;
+      }
+      if (maxLevel !== undefined) {
+        updateFields.push(`"maxLevel" = $${paramCount}`);
+        updateValues.push(maxLevel);
+        paramCount++;
+      }
+      if (cryptoBalance !== undefined) {
+        updateFields.push(`"cryptoBalance" = $${paramCount}`);
+        updateValues.push(cryptoBalance);
+        paramCount++;
+      }
+      if (ownedFrogs) {
+        updateFields.push(`"ownedFrogs" = $${paramCount}`);
+        updateValues.push(JSON.stringify(ownedFrogs));
+        paramCount++;
+      }
+      if (equippedFrog !== undefined) {
+        updateFields.push(`"equippedFrog" = $${paramCount}`);
+        updateValues.push(equippedFrog);
+        paramCount++;
+      }
+      if (newPassword) {
+        updateFields.push(`"passHash" = $${paramCount}`);
+        updateValues.push(hashPass(newPassword));
+        paramCount++;
+      }
+      if (isActive !== undefined) {
+        updateFields.push(`"isActive" = $${paramCount}`);
+        updateValues.push(isActive ? true : false);
+        paramCount++;
+      }
 
-    if (updateFields.length === 0) {
-      await connection.end();
-      return res.status(400).json({ error: 'No fields to update' });
+      if (updateFields.length === 0) {
+        await client.end();
+        return res.status(400).json({ error: 'No fields to update' });
+      }
+
+      updateValues.push(playerId);
+      const query = `UPDATE players SET ${updateFields.join(', ')} WHERE id = $${paramCount}`;
+
+      await client.query(query, updateValues);
+      await client.end();
+
+      return res.status(200).json({ success: true, message: 'Player updated' });
+    } catch (error) {
+      await client.end();
+      throw error;
     }
-
-    updateValues.push(playerId);
-    const query = `UPDATE players SET ${updateFields.join(', ')} WHERE id = ?`;
-
-    await connection.execute(query, updateValues);
-    await connection.end();
-
-    return res.status(200).json({ success: true, message: 'Player updated' });
   } catch (error) {
     console.error('Update player error:', error);
     return res.status(500).json({ error: 'Server error' });
