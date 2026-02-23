@@ -1,25 +1,13 @@
 {
   "name": "frog-hop-crypto",
   "version": "1.0.0",
-  "description": "Frog Hop Crypto - Blockchain Gaming Platform with MySQL Backend",
-  "main": "api/index.js",
+  "description": "Frog Hop Crypto - Blockchain Gaming Platform",
   "scripts": {
     "dev": "vercel dev",
-    "build": "echo 'Build complete'",
-    "start": "node server.js"
+    "build": "echo Build complete"
   },
   "dependencies": {
-    "express": "^4.18.2",
-    "mysql2": "^3.6.5",
-    "dotenv": "^16.3.1",
-    "cors": "^2.8.5",
-    "body-parser": "^1.20.2",
-    "jsonwebtoken": "^9.1.0"
-  },
-  "devDependencies": {
-    "vercel": "^33.3.0"
-  },
-  "engines": {
-    "node": "18.x"
+    "pg": "^8.11.3",
+    "dotenv": "^16.3.1"
   }
 }
