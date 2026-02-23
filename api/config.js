@@ -1,60 +1,57 @@
-import mysql from 'mysql2/promise';
+import pg from 'pg';
+const { Client } = pg;
 
 export async function getConnection() {
-  const connection = await mysql.createConnection({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 10,
-    queueLimit: 0,
-    enableKeepAlive: true,
-    keepAliveInitialDelayMs: 0,
+  const client = new Client({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+    port: process.env.DB_PORT || 5432,
+    ssl: {
+      rejectUnauthorized: false,
+    },
   });
 
-  return connection;
+  await client.connect();
+  return client;
 }
 
 export async function initDatabase() {
   try {
-    const connection = await getConnection();
+    const client = await getConnection();
 
-    // Players table
-    await connection.execute(`
+    // Create players table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS players (
         id VARCHAR(100) PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
         email VARCHAR(100) UNIQUE,
         phone VARCHAR(20) UNIQUE,
         avatar VARCHAR(10) DEFAULT '🐸',
-        passHash VARCHAR(255) NOT NULL,
-        bestScore INT DEFAULT 0,
-        maxLevel INT DEFAULT 1,
-        totalCoins INT DEFAULT 0,
-        totalDeaths INT DEFAULT 0,
-        maxCombo INT DEFAULT 1,
-        gamesPlayed INT DEFAULT 0,
-        totalGems INT DEFAULT 0,
-        cryptoEarned DECIMAL(18,6) DEFAULT 0,
-        cryptoBalance DECIMAL(18,6) DEFAULT 0,
-        ownedFrogs JSON DEFAULT '[]',
-        equippedFrog INT DEFAULT 0,
-        wallet JSON DEFAULT '{"btc":0,"eth":0,"sol":0,"bnb":0,"gems":0}',
-        isAdmin BOOLEAN DEFAULT FALSE,
-        isActive BOOLEAN DEFAULT TRUE,
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        lastLogin TIMESTAMP,
-        INDEX(email),
-        INDEX(phone),
-        INDEX(createdAt),
-        INDEX(bestScore)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        "passHash" VARCHAR(255) NOT NULL,
+        "bestScore" INT DEFAULT 0,
+        "maxLevel" INT DEFAULT 1,
+        "totalCoins" INT DEFAULT 0,
+        "totalDeaths" INT DEFAULT 0,
+        "maxCombo" INT DEFAULT 1,
+        "gamesPlayed" INT DEFAULT 0,
+        "totalGems" INT DEFAULT 0,
+        "cryptoEarned" DECIMAL(18,6) DEFAULT 0,
+        "cryptoBalance" DECIMAL(18,6) DEFAULT 0,
+        "ownedFrogs" JSONB DEFAULT '[]',
+        "equippedFrog" INT DEFAULT 0,
+        wallet JSONB DEFAULT '{"btc":0,"eth":0,"sol":0,"bnb":0,"gems":0}',
+        "isAdmin" BOOLEAN DEFAULT FALSE,
+        "isActive" BOOLEAN DEFAULT TRUE,
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        "lastLogin" TIMESTAMP
+      )
     `);
 
-    // Leaderboard table
-    await connection.execute(`
+    // Create leaderboard table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS leaderboard (
         id VARCHAR(100) PRIMARY KEY,
         name VARCHAR(100) NOT NULL,
@@ -62,48 +59,39 @@ export async function initDatabase() {
         level INT DEFAULT 1,
         combo INT DEFAULT 1,
         avatar VARCHAR(10),
-        updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX(score),
-        INDEX(level)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        "updatedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
-    // Game stats table (for analytics)
-    await connection.execute(`
+    // Create game_stats table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS game_stats (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        playerId VARCHAR(100) NOT NULL,
-        levelPlayed INT,
-        scoreEarned INT,
-        timeSpent INT,
-        coinsCollected INT,
-        deathCount INT,
-        completedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (playerId) REFERENCES players(id) ON DELETE CASCADE,
-        INDEX(playerId),
-        INDEX(completedAt)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        id SERIAL PRIMARY KEY,
+        "playerId" VARCHAR(100) NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+        "levelPlayed" INT,
+        "scoreEarned" INT,
+        "timeSpent" INT,
+        "coinsCollected" INT,
+        "deathCount" INT,
+        "completedAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
-    // Transaction history table (for crypto tracking)
-    await connection.execute(`
+    // Create transactions table
+    await client.query(`
       CREATE TABLE IF NOT EXISTS transactions (
-        id INT AUTO_INCREMENT PRIMARY KEY,
-        playerId VARCHAR(100) NOT NULL,
-        type ENUM('earn', 'spend', 'purchase', 'bonus') DEFAULT 'earn',
+        id SERIAL PRIMARY KEY,
+        "playerId" VARCHAR(100) NOT NULL REFERENCES players(id) ON DELETE CASCADE,
+        type VARCHAR(50) DEFAULT 'earn',
         amount DECIMAL(18,6),
-        coinType VARCHAR(10),
+        "coinType" VARCHAR(10),
         description VARCHAR(255),
-        balanceAfter DECIMAL(18,6),
-        createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        FOREIGN KEY (playerId) REFERENCES players(id) ON DELETE CASCADE,
-        INDEX(playerId),
-        INDEX(createdAt),
-        INDEX(type)
-      ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci
+        "balanceAfter" DECIMAL(18,6),
+        "createdAt" TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
     `);
 
-    await connection.end();
+    await client.end();
     console.log('✅ Database initialized successfully');
   } catch (error) {
     console.error('❌ Database initialization error:', error);
